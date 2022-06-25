@@ -5,15 +5,17 @@
 
 #include "trajectory_generator_node/Generate.h"
 
-#include <thread>
-#include <string>
 #include <mutex>
+#include <string>
+#include <thread>
 
 ros::NodeHandle* node;
 
 bool generate_trajectories(trajectory_generator_node::Generate::Request &request, trajectory_generator_node::Generate::Response &response)
 {
-	reponse.success = false;
+    ROS_INFO("Generating trajectories from: %s", request.paths_directory.c_str());
+
+	response.success = false;
     return false;
 }
 
