@@ -4,6 +4,7 @@
 #include "std_msgs/String.h"
 
 #include "trajectory_generator_node/Generate.h"
+#include <ck_utilities/ParameterHelper.hpp>
 
 #include <thread>
 #include <string>
@@ -13,7 +14,8 @@ ros::NodeHandle* node;
 
 bool generate_trajectories(trajectory_generator_node::Generate::Request &request, trajectory_generator_node::Generate::Response &response)
 {
-	reponse.success = false;
+    (void)request;
+	response.success = false;
     return false;
 }
 
@@ -34,6 +36,15 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     node = &n;
+
+    bool required_params_found = true;
+	required_params_found &= n.getParam(CKSP(trajectory_config_dir), trajectory_config_dir);
+
+	if (!required_params_found)
+	{
+		ROS_ERROR("Missing required parameters for node %s. Please check the list and make sure all required parameters are included", ros::this_node::getName().c_str());
+		return 1;
+	}
 
 	ros::ServiceServer service_generate = node->advertiseService("generate_trajectories", generate_trajectories);
 
