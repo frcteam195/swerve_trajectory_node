@@ -199,6 +199,7 @@ message("CATKIN INCLUDES:${catkin_INCLUDE_DIRS}")
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 find_package(nlohmann_json REQUIRED)
+set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 file(GLOB_RECURSE executable_sources CONFIGURE_DEPENDS
      "${PROJECT_SOURCE_DIR}/src/*.cpp"
