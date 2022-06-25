@@ -1,5 +1,0 @@
-# Inputs
-string paths_directory
----
-# Outputs
-bool success

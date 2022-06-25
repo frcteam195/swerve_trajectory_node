@@ -3,7 +3,7 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 
-#include "trajectory_generator_node/Generate.h"
+#include "trajectory_generator_node/GetTrajectory.h"
 
 #include <mutex>
 #include <string>
@@ -11,9 +11,14 @@
 
 ros::NodeHandle* node;
 
-bool generate_trajectories(trajectory_generator_node::Generate::Request &request, trajectory_generator_node::Generate::Response &response)
+void generate_trajectories(void)
 {
-    ROS_INFO("Generating trajectories from: %s", request.paths_directory.c_str());
+    ROS_INFO("Generating all trajectories defined in: %s", "WOOOOO");
+}
+
+bool get_trajectory(trajectory_generator_node::GetTrajectory::Request &request, trajectory_generator_node::GetTrajectory::Response &response)
+{
+    ROS_INFO("Getting trajectory: %s", request.path_name.c_str());
 
 	response.success = false;
     return false;
@@ -37,7 +42,7 @@ int main(int argc, char **argv)
 
     node = &n;
 
-	ros::ServiceServer service_generate = node->advertiseService("generate_trajectories", generate_trajectories);
+	ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
 
     ros::spin();
     return 0;

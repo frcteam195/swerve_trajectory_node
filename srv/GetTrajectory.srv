@@ -1,0 +1,6 @@
+# Inputs
+string path_name
+---
+# Outputs
+# TODO: Update to nav format.
+bool success

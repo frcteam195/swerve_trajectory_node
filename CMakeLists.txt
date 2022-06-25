@@ -55,7 +55,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation rio_c
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  Generate.srv
+  GetTrajectory.srv
 )
 
 ## Generate actions in the 'action' folder
