@@ -117,14 +117,13 @@ namespace ck
 
             // Create the constraint that the robot must be able to traverse the trajectory without ever applying more than the specified voltage.
             trajectory::timing::DifferentialDriveDynamicsConstraint<geometry::Pose2dWithCurvature> driveConstraints(*this->mModel, maximumVoltage);
-
-            std::vector<trajectory::timing::TimingConstraint<geometry::Pose2dWithCurvature>> allConstraints = {driveConstraints};
+            constraints.push_back(driveConstraints);
 
             trajectory::DistanceView<geometry::Pose2dWithCurvature> distanceView(trajectory);
             trajectory::Trajectory<trajectory::timing::TimedState<geometry::Pose2dWithCurvature>> timedTrajectory = trajectory::timing::TimingUtil::timeParameterizeTrajectory(reversed,
                                                                                                                                                                                distanceView,
                                                                                                                                                                                kMaxDx,
-                                                                                                                                                                               allConstraints,
+                                                                                                                                                                               constraints,
                                                                                                                                                                                startVelocity,
                                                                                                                                                                                endVelocity,
                                                                                                                                                                                maximumVelocity,
