@@ -1,6 +1,5 @@
 # Inputs
-string path_name
+string paths_directory
 ---
 # Outputs
-# Update to appropriate nav type
-bool trajectory
+bool success

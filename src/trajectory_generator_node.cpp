@@ -1,11 +1,21 @@
+#include "trajectory_generator_node.hpp"
+
 #include "ros/ros.h"
 #include "std_msgs/String.h"
+
+#include "trajectory_generator_node/Generate.h"
 
 #include <thread>
 #include <string>
 #include <mutex>
 
 ros::NodeHandle* node;
+
+bool generate_trajectories(trajectory_generator_node::Generate::Request &request, trajectory_generator_node::Generate::Response &response)
+{
+	reponse.success = false;
+    return false;
+}
 
 int main(int argc, char **argv)
 {
@@ -24,6 +34,8 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     node = &n;
+
+	ros::ServiceServer service_generate = node->advertiseService("generate_trajectories", generate_trajectories);
 
     ros::spin();
     return 0;

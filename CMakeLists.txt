@@ -53,11 +53,10 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation rio_c
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  Generate.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
