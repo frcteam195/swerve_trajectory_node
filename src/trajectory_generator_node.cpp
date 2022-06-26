@@ -1,18 +1,22 @@
 #include "trajectory_generator_node.hpp"
 
 #include "ck_utilities/ParameterHelper.hpp"
+#include "utils/JsonParser.hpp"
 
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 
 #include "trajectory_generator_node/GetTrajectory.h"
 
-#include <experimental/filesystem>
+#include "boost/filesystem.hpp"
+#include "boost/filesystem/fstream.hpp"
+#include "nlohmann/json.hpp"
+
 #include <mutex>
 #include <string>
 #include <thread>
 
-namespace fs = std::experimental::filesystem;
+namespace fs = boost::filesystem;
 
 ros::NodeHandle* node;
 
@@ -23,6 +27,11 @@ void generate_trajectories(void)
     for (const fs::directory_entry &trajectory_configuration : fs::directory_iterator(trajectory_directory))
     {
         ROS_INFO("Generating trajectory from: %s", trajectory_configuration.path().c_str());
+
+        fs::ifstream trajectory_buffer { trajectory_configuration.path() };
+        nlohmann::json trajectory_json = nlohmann::json::parse(trajectory_buffer);
+
+        ck::json::parse_json_waypoints(trajectory_json);
     }
 }
 
