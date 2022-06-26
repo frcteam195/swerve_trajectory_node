@@ -198,6 +198,8 @@ message("CATKIN INCLUDES:${catkin_INCLUDE_DIRS}")
 # catkin_add_nosetests(test)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
+find_package(nlohmann_json REQUIRED)
+set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 file(GLOB_RECURSE executable_sources CONFIGURE_DEPENDS
      "${PROJECT_SOURCE_DIR}/src/*.cpp"
@@ -209,7 +211,7 @@ file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS
 
 add_executable(${PROJECT_NAME} ${executable_sources})
 target_include_directories(${PROJECT_NAME} PUBLIC "include")
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} Threads::Threads)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} Threads::Threads nlohmann_json::nlohmann_json)
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
@@ -219,7 +221,7 @@ if(CATKIN_ENABLE_TESTING)
   ## Add gtest based cpp test target and link libraries.
   add_library(t${PROJECT_NAME} ${executable_sources})
   target_include_directories(t${PROJECT_NAME} PUBLIC "include")
-  target_link_libraries(t${PROJECT_NAME} ${catkin_LIBRARIES} Threads::Threads)
+  target_link_libraries(t${PROJECT_NAME} ${catkin_LIBRARIES} Threads::Threads nlohmann_json::nlohmann_json)
   add_dependencies(t${PROJECT_NAME} ${PROJECT_NAME} ${t${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
   catkin_add_gtest(${PROJECT_NAME}-test ${test_sources})
