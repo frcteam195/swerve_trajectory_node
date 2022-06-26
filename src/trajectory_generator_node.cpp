@@ -55,7 +55,7 @@ bool get_trajectory(trajectory_generator_node::GetTrajectory::Request &request, 
 {
     ROS_INFO("Getting trajectory: %s", request.path_name.c_str());
 
-    response.success = false;
+    (void)response;
     return false;
 }
 

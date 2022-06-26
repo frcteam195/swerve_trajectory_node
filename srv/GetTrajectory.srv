@@ -2,5 +2,4 @@
 string path_name
 ---
 # Outputs
-# TODO: Update to nav format.
-bool success
+nav_msgs/Path path
