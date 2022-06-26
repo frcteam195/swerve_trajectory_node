@@ -2,4 +2,4 @@
 string path_name
 ---
 # Outputs
-nav_msgs/Path path
+trajectory_generator_node/Trajectory trajectory

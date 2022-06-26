@@ -10,7 +10,7 @@ project(${PROJECT_NAME})
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs nav_msgs geometry_msgs trajectory_msgs message_generation rio_control_node ck_utilities_node hmi_agent_node)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs nav_msgs geometry_msgs message_generation rio_control_node ck_utilities_node hmi_agent_node)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -46,11 +46,10 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs nav_msgs geometry_msgs t
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Joystick.msg
-#   Joystick_Status.msg
-# )
+add_message_files(
+  FILES
+  Trajectory.msg
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -71,7 +70,6 @@ generate_messages(
   std_msgs  # Or other packages containing msgs
   nav_msgs
   geometry_msgs
-  trajectory_msgs
 )
 
 ################################################
