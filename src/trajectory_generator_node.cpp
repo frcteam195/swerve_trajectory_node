@@ -1,5 +1,6 @@
 #include "trajectory_generator_node.hpp"
 
+#include "ck_utilities/Logger.hpp"
 #include "ck_utilities/ParameterHelper.hpp"
 #include "geometry/Pose2dWithCurvature.hpp"
 #include "plannners/DriveMotionPlanner.hpp"
@@ -16,6 +17,7 @@
 #include "boost/filesystem/fstream.hpp"
 #include "nlohmann/json.hpp"
 
+#include <map>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -24,15 +26,25 @@ namespace fs = boost::filesystem;
 
 ros::NodeHandle *node;
 
+std::map<std::string, bool> trajectory_map;
+
 void generate_trajectories(void)
 {
-    ROS_INFO("Generating all trajectories defined in: %s", trajectory_directory.c_str());
+    ck::log_info << "Generating all trajectories defined in: " << trajectory_directory << std::flush;
 
     ck::planners::DriveMotionPlanner motion_planner;
 
+    fs::path directory_path(trajectory_directory);
+
+    if (!fs::exists(directory_path))
+    {
+        ck::log_error << directory_path << " does not exist!" << std::flush; 
+        return;
+    }
+
     for (const fs::directory_entry &trajectory_configuration : fs::directory_iterator(trajectory_directory))
     {
-        ROS_INFO("Generating trajectory from: %s", trajectory_configuration.path().c_str());
+        ck::log_info << "Generating trajectory from: " << trajectory_configuration.path() << std::flush;
 
         fs::ifstream trajectory_buffer{trajectory_configuration.path()};
         nlohmann::json trajectory_json = nlohmann::json::parse(trajectory_buffer);
@@ -48,12 +60,14 @@ void generate_trajectories(void)
                                                               max_acceleration,
                                                               max_velocity,
                                                               max_voltage);
+
+        trajectory_map.insert(std::pair<std::string, bool>(trajectory_json["name"], true));
     }
 }
 
 bool get_trajectory(trajectory_generator_node::GetTrajectory::Request &request, trajectory_generator_node::GetTrajectory::Response &response)
 {
-    ROS_INFO("Getting trajectory: %s", request.path_name.c_str());
+    ck::log_info << "Getting trajectory: " << request.path_name << std::flush;
 
     (void)response;
     return false;
@@ -85,11 +99,14 @@ int main(int argc, char **argv)
 
     if (!required_params_found)
     {
-        ROS_ERROR("Missing required parameters for node %s. Please check the list and make sure all required parameters are included", ros::this_node::getName().c_str());
+        ck::log_error << "Missing required parameters for node " << ros::this_node::getName() << "." << std::flush;
+        ck::log_error << "Please check the list and make sure all required parameters are included." << std::flush;
         return 1;
     }
 
     ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
+
+    generate_trajectories();
 
     ros::spin();
     return 0;
