@@ -1,9 +1,10 @@
 #pragma once
 
-#include <cmath>
+#include "ck_utilities/geometry/Pose2dWithCurvature.hpp"
 #include "MinMaxAcceleration.hpp"
 #include "TimingConstraint.hpp"
-#include "geometry/Pose2dWithCurvature.hpp"
+
+#include <cmath>
 
 namespace ck
 {

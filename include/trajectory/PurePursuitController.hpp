@@ -1,10 +1,10 @@
 #pragma once
 
 #include <vector>
-#include "geometry/Geometry.hpp"
+#include "ck_utilities/geometry/Geometry.hpp"
 #include "TrajectoryIterator.hpp"
 #include "IPathFollower.hpp"
-#include "utils/CKMath.hpp"
+#include "ck_utilities/CKMath.hpp"
 #include "Arc.hpp"
 
 namespace ck

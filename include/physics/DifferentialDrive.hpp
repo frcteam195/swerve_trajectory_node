@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <vector>
-#include "utils/CKMath.hpp"
+#include "ck_utilities/CKMath.hpp"
 #include "utils/PolynomialRegression.hpp"
 #include "DCMotorTransmission.hpp"
 

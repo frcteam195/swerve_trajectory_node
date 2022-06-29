@@ -4,7 +4,7 @@
 #include <vector>
 #include <ostream>
 #include <iomanip>
-#include "utils/CKMath.hpp"
+#include "ck_utilities/CKMath.hpp"
 #include "utils/PolynomialRegression.hpp"
 
 namespace ck

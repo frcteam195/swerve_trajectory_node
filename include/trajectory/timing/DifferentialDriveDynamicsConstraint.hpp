@@ -1,12 +1,13 @@
 #pragma once
 
-#include <cmath>
-#include <type_traits>
+#include "ck_utilities/CKMathConstants.hpp"
+#include "ck_utilities/geometry/Geometry.hpp"
 #include "MinMaxAcceleration.hpp"
 #include "TimingConstraint.hpp"
-#include "utils/CKMathConstants.hpp"
-#include "geometry/Geometry.hpp"
 #include "physics/DifferentialDrive.hpp"
+
+#include <cmath>
+#include <type_traits>
 
 namespace ck
 {

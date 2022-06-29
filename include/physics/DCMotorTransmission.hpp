@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cmath>
-#include "utils/CKMath.hpp"
+#include "ck_utilities/CKMath.hpp"
 
 namespace ck
 {

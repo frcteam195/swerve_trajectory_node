@@ -3,8 +3,8 @@
 #include <vector>
 #include <cmath>
 #include <limits>
-#include "geometry/Geometry.hpp"
-#include "utils/CKMath.hpp"
+#include "ck_utilities/geometry/Geometry.hpp"
+#include "ck_utilities/CKMath.hpp"
 
 namespace ck
 {

@@ -3,8 +3,8 @@
 #include <cmath>
 #include <vector>
 #include <iostream>
-#include "utils/CKMath.hpp"
-#include "geometry/Geometry.hpp"
+#include "ck_utilities/CKMath.hpp"
+#include "ck_utilities/geometry/Geometry.hpp"
 #include "Spline.hpp"
 
 namespace ck

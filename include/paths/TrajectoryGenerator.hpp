@@ -2,7 +2,7 @@
 
 #include "plannners/DriveMotionPlanner.hpp"
 #include "paths/MirroredTrajectory.hpp"
-#include "utils/Singleton.hpp"
+#include "ck_utilities/Singleton.hpp"
 
 namespace ck
 {

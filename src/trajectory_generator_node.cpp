@@ -2,7 +2,7 @@
 
 #include "ck_utilities/Logger.hpp"
 #include "ck_utilities/ParameterHelper.hpp"
-#include "geometry/Pose2dWithCurvature.hpp"
+#include "ck_utilities/geometry/Pose2dWithCurvature.hpp"
 #include "plannners/DriveMotionPlanner.hpp"
 #include "trajectory/timing/TimingConstraint.hpp"
 #include "trajectory/Trajectory.hpp"
@@ -67,7 +67,9 @@ void generate_trajectories(void)
 
 bool get_trajectory(trajectory_generator_node::GetTrajectory::Request &request, trajectory_generator_node::GetTrajectory::Response &response)
 {
-    ck::log_info << "Getting trajectory: " << request.path_name << std::flush;
+    ck::log_info << "Getting Trajectory: " << request.path_name << std::flush;
+
+    ck::log_info << "Trajectory: " << response.trajectory << std::flush;
 
     (void)response;
     return false;

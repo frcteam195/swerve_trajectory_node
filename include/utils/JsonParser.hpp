@@ -1,6 +1,6 @@
 #pragma once
 
-#include "geometry/Pose2d.hpp"
+#include "ck_utilities/geometry/Pose2d.hpp"
 #include "nlohmann/json.hpp"
 
 #include <vector>

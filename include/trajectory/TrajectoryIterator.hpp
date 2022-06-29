@@ -1,10 +1,11 @@
 #pragma once
 
-#include <type_traits>
-#include "utils/CKMath.hpp"
-#include "geometry/State.hpp"
+#include "ck_utilities/CKMath.hpp"
+#include "ck_utilities/geometry/State.hpp"
 #include "TrajectoryView.hpp"
 #include "TrajectorySamplePoint.hpp"
+
+#include <type_traits>
 
 namespace ck
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../geometry/Pose2dWithCurvature.hpp"
+#include "ck_utilities/geometry/Pose2dWithCurvature.hpp"
 #include "../trajectory/Trajectory.hpp"
 #include "../trajectory/timing/TimedState.hpp"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils/CKMath.hpp"
+#include "ck_utilities/CKMath.hpp"
 
 namespace ck
 {

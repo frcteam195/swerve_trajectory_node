@@ -1,11 +1,12 @@
 #pragma once
 
-#include <vector>
-#include "geometry/State.hpp"
+#include "ck_utilities/CKMath.hpp"
+#include "ck_utilities/geometry/State.hpp"
 #include "TrajectoryView.hpp"
 #include "TrajectorySamplePoint.hpp"
 #include "timing/TimedState.hpp"
-#include "utils/CKMath.hpp"
+
+#include <vector>
 
 namespace ck
 {

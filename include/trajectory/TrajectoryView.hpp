@@ -1,8 +1,9 @@
 #pragma once
 
-#include <type_traits>
-#include "geometry/State.hpp"
+#include "ck_utilities/geometry/State.hpp"
 #include "TrajectorySamplePoint.hpp"
+
+#include <type_traits>
 
 namespace ck
 {

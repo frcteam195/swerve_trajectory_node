@@ -1,6 +1,6 @@
 #pragma once
 
-#include "geometry/Pose2dWithCurvature.hpp"
+#include "ck_utilities/geometry/Pose2dWithCurvature.hpp"
 #include "spline/QuinticHermiteSpline.hpp"
 #include "spline/SplineGenerator.hpp"
 #include "trajectory/Trajectory.hpp"

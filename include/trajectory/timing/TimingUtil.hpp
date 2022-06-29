@@ -1,17 +1,18 @@
 #pragma once
 
-#include <vector>
-#include <cmath>
-#include <iostream>
-#include <type_traits>
-#include <exception>
-#include "geometry/Geometry.hpp"
-#include "utils/CKMath.hpp"
+#include "ck_utilities/CKMath.hpp"
+#include "ck_utilities/geometry/Geometry.hpp"
 #include "trajectory/timing/MinMaxAcceleration.hpp"
 #include "trajectory/Trajectory.hpp"
 #include "trajectory/DistanceView.hpp"
 #include "TimingConstraint.hpp"
 #include "TimedState.hpp"
+
+#include <cmath>
+#include <exception>
+#include <iostream>
+#include <type_traits>
+#include <vector>
 
 namespace ck
 {

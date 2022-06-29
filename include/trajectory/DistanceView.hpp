@@ -3,8 +3,8 @@
 #include <vector>
 #include <cmath>
 #include <type_traits>
-#include "geometry/State.hpp"
-#include "utils/CKMath.hpp"
+#include "ck_utilities/geometry/State.hpp"
+#include "ck_utilities/CKMath.hpp"
 #include "TrajectoryView.hpp"
 
 namespace ck

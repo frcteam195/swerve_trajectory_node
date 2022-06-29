@@ -1,7 +1,8 @@
 #pragma once
 
+#include "ck_utilities/geometry/State.hpp"
+
 #include <type_traits>
-#include "geometry/State.hpp"
 
 namespace ck
 {

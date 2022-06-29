@@ -1,11 +1,12 @@
 #pragma once
 
-#include <type_traits>
-#include <vector>
+#include "ck_utilities/geometry/State.hpp"
+#include "IndexView.hpp"
+
 #include <cmath>
 #include <limits>
-#include "geometry/State.hpp"
-#include "IndexView.hpp"
+#include <type_traits>
+#include <vector>
 
 namespace ck
 {
