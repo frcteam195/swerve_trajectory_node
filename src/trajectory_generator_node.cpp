@@ -9,6 +9,9 @@
 #include "trajectory/Trajectory.hpp"
 
 #include "ros/ros.h"
+
+#include "geometry_msgs/PoseStamped.h"
+#include "nav_msgs/Path.h"
 #include "std_msgs/String.h"
 
 #include "trajectory_generator_node/GetTrajectory.h"
@@ -62,6 +65,18 @@ void generate_trajectories(void)
                                                               max_voltage);
 
         trajectory_map.insert(std::pair<std::string, bool>(trajectory_json["name"], true));
+
+        // Convert the CK trajectory into a ROS path.
+        nav_msgs::Path path;
+        path.header.frame_id = trajectory_json["name"];
+        path.header.stamp = ros::Time::now();
+
+        for (int i = 0; i < output_trajectory.length(); ++i)
+        {
+            geometry_msgs::PoseStamped pose_stamped = geometry_msgs::PoseStamped();
+
+            pose_stamped.pose.position.x = output_trajectory.getPoint(i).state_.state().getTranslation().x();
+        }
     }
 }
 
