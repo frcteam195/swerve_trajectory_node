@@ -3,10 +3,10 @@
 #include "ck_utilities/Logger.hpp"
 #include "ck_utilities/ParameterHelper.hpp"
 #include "ck_utilities/geometry/Pose2dWithCurvature.hpp"
+#include "parsers/JsonParser.hpp"
 #include "plannners/DriveMotionPlanner.hpp"
 #include "trajectory/timing/TimingConstraint.hpp"
 #include "trajectory/Trajectory.hpp"
-#include "utils/JsonParser.hpp"
 
 #include "ros/ros.h"
 #include "std_msgs/String.h"
