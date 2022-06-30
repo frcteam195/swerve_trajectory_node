@@ -4,7 +4,7 @@
 #include "ck_utilities/geometry/Geometry.hpp"
 #include "MinMaxAcceleration.hpp"
 #include "TimingConstraint.hpp"
-#include "physics/DifferentialDrive.hpp"
+#include "ck_utilities/physics/DifferentialDrive.hpp"
 
 #include <cmath>
 #include <type_traits>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ck_utilities/geometry/Pose2dWithCurvature.hpp"
-#include "physics/DifferentialDrive.hpp"
+#include "ck_utilities/physics/DifferentialDrive.hpp"
 #include "trajectory/timing/TimingConstraint.hpp"
 #include "trajectory/timing/TimedState.hpp"
 #include "trajectory/Trajectory.hpp"

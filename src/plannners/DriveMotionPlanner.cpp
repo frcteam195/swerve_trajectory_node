@@ -1,7 +1,7 @@
 #include "plannners/DriveMotionPlanner.hpp"
 
 #include "Constants.hpp"
-#include "physics/DCMotorTransmission.hpp"
+#include "ck_utilities/physics/DCMotorTransmission.hpp"
 #include "trajectory/timing/DifferentialDriveDynamicsConstraint.hpp"
 #include "trajectory/timing/TimingUtil.hpp"
 #include "trajectory/TrajectoryUtil.hpp"
