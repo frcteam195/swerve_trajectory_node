@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ck_utilities/geometry/Pose2dWithCurvature.hpp"
-#include "spline/QuinticHermiteSpline.hpp"
-#include "spline/SplineGenerator.hpp"
+#include "ck_utilities/spline/QuinticHermiteSpline.hpp"
+#include "ck_utilities/spline/SplineGenerator.hpp"
 #include "trajectory/Trajectory.hpp"
 #include "trajectory/timing/TimedState.hpp"
 
