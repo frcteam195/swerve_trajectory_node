@@ -1,4 +1,6 @@
 #include "trajectory_generator_node.hpp"
+#include "trajectory_generator_node/GetTrajectory.h"
+#include "trajectory_generator_node/OutputTrajectory.h"
 
 #include "ck_utilities/Logger.hpp"
 #include "ck_utilities/ParameterHelper.hpp"
@@ -11,25 +13,55 @@
 #include "ros/ros.h"
 
 #include "geometry_msgs/PoseStamped.h"
-#include "nav_msgs/Path.h"
-#include "std_msgs/String.h"
-
-#include "trajectory_generator_node/GetTrajectory.h"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "nlohmann/json.hpp"
 
 #include <map>
-#include <mutex>
 #include <string>
-#include <thread>
 
 namespace fs = boost::filesystem;
 
+using namespace ck::geometry;
+using namespace ck::trajectory;
+using namespace ck::trajectory::timing;
+
+using namespace trajectory_generator_node;
+
 ros::NodeHandle *node;
 
-std::map<std::string, bool> trajectory_map;
+std::map<std::string, trajectory_generator_node::OutputTrajectory> output_map;
+
+OutputTrajectory package_trajectory(std::string name, Trajectory<TimedState<Pose2dWithCurvature>> trajectory)
+{
+    OutputTrajectory output = OutputTrajectory();
+
+    output.path.header.frame_id = name;
+    output.path.header.stamp = ros::Time::now();
+
+    for (int i = 0; i < trajectory.length(); ++i)
+    {
+        geometry_msgs::PoseStamped pose_stamped = geometry_msgs::PoseStamped();
+
+        pose_stamped.pose.position.x = trajectory.getPoint(i).state_.state().getTranslation().x();
+        pose_stamped.pose.position.y = trajectory.getPoint(i).state_.state().getTranslation().y();
+        pose_stamped.pose.position.z = 0.0;
+
+        tf2::Quaternion rotation;
+        rotation.setRPY(0.0, 0.0, trajectory.getPoint(i).state_.state().getRotation().getRadians());
+        rotation.normalize();
+        pose_stamped.pose.orientation = tf2::toMsg(rotation);
+
+        output.path.poses.push_back(pose_stamped);
+        output.velocities.push_back(trajectory.getState(i).velocity());
+        output.accelerations.push_back(trajectory.getState(i).acceleration());
+    }
+
+    return output;
+}
 
 void generate_trajectories(void)
 {
@@ -52,31 +84,21 @@ void generate_trajectories(void)
         fs::ifstream trajectory_buffer{trajectory_configuration.path()};
         nlohmann::json trajectory_json = nlohmann::json::parse(trajectory_buffer);
 
-        std::vector<ck::geometry::Pose2d> waypoints = ck::json::parse_json_waypoints(trajectory_json["waypoints"]);
+        std::vector<Pose2d> waypoints = ck::json::parse_json_waypoints(trajectory_json["waypoints"]);
 
-        std::vector<ck::trajectory::timing::TimingConstraint<ck::geometry::Pose2dWithCurvature>> constraints;
+        std::vector<TimingConstraint<Pose2dWithCurvature>> constraints;
 
-        ck::trajectory::Trajectory<ck::trajectory::timing::TimedState<ck::geometry::Pose2dWithCurvature>> output_trajectory;
-        output_trajectory = motion_planner.generateTrajectory(trajectory_json["reversed"],
-                                                              waypoints,
-                                                              constraints,
-                                                              max_acceleration,
-                                                              max_velocity,
-                                                              max_voltage);
-
-        trajectory_map.insert(std::pair<std::string, bool>(trajectory_json["name"], true));
+        Trajectory<TimedState<Pose2dWithCurvature>> generated_trajectory;
+        generated_trajectory = motion_planner.generateTrajectory(trajectory_json["reversed"],
+                                                                 waypoints,
+                                                                 constraints,
+                                                                 max_acceleration,
+                                                                 max_velocity,
+                                                                 max_voltage);
 
         // Convert the CK trajectory into a ROS path.
-        nav_msgs::Path path;
-        path.header.frame_id = trajectory_json["name"];
-        path.header.stamp = ros::Time::now();
-
-        for (int i = 0; i < output_trajectory.length(); ++i)
-        {
-            geometry_msgs::PoseStamped pose_stamped = geometry_msgs::PoseStamped();
-
-            pose_stamped.pose.position.x = output_trajectory.getPoint(i).state_.state().getTranslation().x();
-        }
+        trajectory_generator_node::OutputTrajectory output_trajectory = package_trajectory(trajectory_json["name"], generated_trajectory);
+        output_map.insert({trajectory_json["name"], output_trajectory});
     }
 }
 
@@ -84,10 +106,17 @@ bool get_trajectory(trajectory_generator_node::GetTrajectory::Request &request, 
 {
     ck::log_info << "Getting Trajectory: " << request.path_name << std::flush;
 
-    ck::log_info << "Trajectory: " << response.trajectory << std::flush;
-
-    (void)response;
-    return false;
+    try
+    {
+        response.trajectory = output_map.at(request.path_name);
+    }
+    catch(const std::out_of_range& exception)
+    {
+        ck::log_error << exception.what() << std::flush;
+        return false;
+    }
+    
+    return true;
 }
 
 int main(int argc, char **argv)

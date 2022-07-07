@@ -48,7 +48,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs nav_msgs geometry_msgs m
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  Trajectory.msg
+  OutputTrajectory.msg
 )
 
 ## Generate services in the 'srv' folder
