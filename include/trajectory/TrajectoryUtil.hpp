@@ -40,22 +40,13 @@ namespace ck
                 return Trajectory<timing::TimedState<S>>(waypoints);
             }
 
-            template <class S>
-            static Trajectory<geometry::Pose2dWithCurvature> trajectoryFromSplines(std::vector<S *> splines,
+            static Trajectory<geometry::Pose2dWithCurvature> trajectoryFromSplines(std::vector<geometry::QuinticHermiteSpline> splines,
                                                                                    double maxDx,
                                                                                    double maxDy,
                                                                                    double maxDtheta)
             {
-                std::vector<geometry::QuinticHerminteSpline *> newSplines;
-
-                for (S *s : splines)
-                {
-                    newSplines.push_back(static_cast<geometry::QuinticHerminteSpline *>(s));
-                }
-                
-                std::vector<ck::geometry::Pose2dWithCurvature> pSplines = geometry::SplineGenerator::parameterizeSplines(newSplines, maxDx, maxDy, maxDtheta);
-
-                return Trajectory<geometry::Pose2dWithCurvature>(pSplines);
+                std::vector<ck::geometry::Pose2dWithCurvature> splinePoses = geometry::SplineGenerator::parameterizeSplines(splines, maxDx, maxDy, maxDtheta);
+                return Trajectory<geometry::Pose2dWithCurvature>(splinePoses);
             }
 
             static Trajectory<geometry::Pose2dWithCurvature> trajectoryFromSplineWaypoints(std::vector<geometry::Pose2d> waypoints,
