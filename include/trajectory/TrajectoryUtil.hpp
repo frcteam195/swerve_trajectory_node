@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ck_utilities/geometry/Pose2dWithCurvature.hpp"
-#include "ck_utilities/spline/QuinticHermiteSpline.hpp"
-#include "ck_utilities/spline/SplineGenerator.hpp"
+#include "ck_utilities/geometry/QuinticHermiteSpline.hpp"
+#include "ck_utilities/geometry/SplineGenerator.hpp"
 #include "trajectory/Trajectory.hpp"
 #include "trajectory/timing/TimedState.hpp"
 
@@ -46,14 +46,14 @@ namespace ck
                                                                                    double maxDy,
                                                                                    double maxDtheta)
             {
-                std::vector<spline::Spline *> newSplines;
+                std::vector<geometry::QuinticHerminteSpline *> newSplines;
 
                 for (S *s : splines)
                 {
-                    newSplines.push_back(static_cast<spline::Spline *>(s));
+                    newSplines.push_back(static_cast<geometry::QuinticHerminteSpline *>(s));
                 }
                 
-                std::vector<ck::geometry::Pose2dWithCurvature> pSplines = spline::SplineGenerator::parameterizeSplines(newSplines, maxDx, maxDy, maxDtheta);
+                std::vector<ck::geometry::Pose2dWithCurvature> pSplines = geometry::SplineGenerator::parameterizeSplines(newSplines, maxDx, maxDy, maxDtheta);
 
                 return Trajectory<geometry::Pose2dWithCurvature>(pSplines);
             }
