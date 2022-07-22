@@ -43,11 +43,7 @@ namespace ck
             static Trajectory<geometry::Pose2dWithCurvature> trajectoryFromSplines(std::vector<geometry::QuinticHermiteSpline> splines,
                                                                                    double maxDx,
                                                                                    double maxDy,
-                                                                                   double maxDtheta)
-            {
-                std::vector<ck::geometry::Pose2dWithCurvature> splinePoses = geometry::SplineGenerator::parameterizeSplines(splines, maxDx, maxDy, maxDtheta);
-                return Trajectory<geometry::Pose2dWithCurvature>(splinePoses);
-            }
+                                                                                   double maxDtheta);
 
             static Trajectory<geometry::Pose2dWithCurvature> trajectoryFromSplineWaypoints(std::vector<geometry::Pose2d> waypoints,
                                                                                            double maxDx,
