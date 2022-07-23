@@ -40,7 +40,7 @@ namespace ck
 
                 ~TimingConstraint() {}
 
-                double getMaxVelocity(const S &state) const
+                virtual double getMaxVelocity(const S &state) const
                 {
                     switch (type_)
                     {
@@ -78,9 +78,10 @@ namespace ck
                     return 0.0;
                 }
 
-                MinMaxAcceleration getMinMaxAcceleration(/*const S &state,*/ double velocity) const
+                virtual MinMaxAcceleration getMinMaxAcceleration(const S &state, double velocity) const
                 {
                     // TODO: Why is state unused?
+                    (void)state;
 
                     switch (type_)
                     {

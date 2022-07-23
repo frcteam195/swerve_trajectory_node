@@ -120,7 +120,7 @@ namespace ck
                             // Now enforce all acceleration constraints.
                             for (const TimingConstraint<S> &constraint : constraints)
                             {
-                                MinMaxAcceleration min_max_accel = constraint.getMinMaxAcceleration(/*constraint_state.state,*/ (reverse ? -1.0 : 1.0) * constraint_state.max_velocity);
+                                MinMaxAcceleration min_max_accel = constraint.getMinMaxAcceleration(constraint_state.state, (reverse ? -1.0 : 1.0) * constraint_state.max_velocity);
                                 if (!min_max_accel.valid())
                                 {
                                     // This should never happen if constraints are well-behaved.
@@ -196,7 +196,7 @@ namespace ck
                             // Now check all acceleration constraints with the lower max velocity.
                             for (const TimingConstraint<S> &constraint : constraints)
                             {
-                                MinMaxAcceleration min_max_accel = constraint.getMinMaxAcceleration(/*constraint_state.state,*/ (reverse ? -1.0 : 1.0) * constraint_state.max_velocity);
+                                MinMaxAcceleration min_max_accel = constraint.getMinMaxAcceleration(constraint_state.state, (reverse ? -1.0 : 1.0) * constraint_state.max_velocity);
                                 if (!min_max_accel.valid())
                                 {
                                     throw;

@@ -28,7 +28,7 @@ namespace ck
             public:
                 DifferentialDriveDynamicsConstraint(physics::DifferentialDrive &drive, double abs_voltage_limit) : drive_(&drive), abs_voltage_limit_(abs_voltage_limit) {}
 
-                double getMaxVelocity(const S &state) const
+                double getMaxVelocity(const S &state) const override
                 {
                     return ck::math::meters_to_inches(drive_->getMaxAbsVelocity(
                         ck::math::meters_to_inches(state.getCurvature()), // Curvature is in inverse inches, so meters_to_inches is correct.
@@ -36,7 +36,7 @@ namespace ck
                         abs_voltage_limit_));
                 }
 
-                MinMaxAcceleration getMinMaxAcceleration(const S &state, double velocity)
+                MinMaxAcceleration getMinMaxAcceleration(const S &state, double velocity) const override
                 {
                     // TODO figure out a units convention for generic states.  Traditionally we use inches...
                     // NOTE: units cancel on angular velocity.
