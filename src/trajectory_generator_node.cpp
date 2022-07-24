@@ -89,8 +89,8 @@ void generate_trajectories(void)
         Trajectory<TimedState<Pose2dWithCurvature>> generated_trajectory;
         generated_trajectory = motion_planner.generateTrajectory(trajectory_json["reversed"],
                                                                  waypoints,
-                                                                 max_acceleration,
                                                                  max_velocity,
+                                                                 max_acceleration,
                                                                  max_voltage);
 
         // Convert the CK trajectory into a ROS path.
