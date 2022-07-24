@@ -115,10 +115,10 @@ namespace ck
             }
 
             // Create the constraint that the robot must be able to traverse the trajectory without ever applying more than the specified voltage.
-            trajectory::timing::CentripetalAccelerationConstraint centripetalAccelConstraint(kMaxCentripetalAccel);
             trajectory::timing::DifferentialDriveDynamicsConstraint<geometry::Pose2dWithCurvature> driveConstraints(*this->mModel, maximumVoltage);
+            trajectory::timing::CentripetalAccelerationConstraint centripetalAccelConstraint(kMaxCentripetalAccel);
 
-            std::vector<trajectory::timing::TimingConstraint<geometry::Pose2dWithCurvature> *> constraints {&centripetalAccelConstraint, &driveConstraints};
+            std::vector<trajectory::timing::TimingConstraint<geometry::Pose2dWithCurvature> *> constraints {&driveConstraints, &centripetalAccelConstraint};
 
             trajectory::DistanceView<geometry::Pose2dWithCurvature> distanceView(trajectory);
             trajectory::Trajectory<trajectory::timing::TimedState<geometry::Pose2dWithCurvature>> timedTrajectory = trajectory::timing::TimingUtil::timeParameterizeTrajectory(reversed,
