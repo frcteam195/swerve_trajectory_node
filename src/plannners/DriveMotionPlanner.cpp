@@ -2,8 +2,10 @@
 
 #include "Constants.hpp"
 #include "ck_utilities/physics/DCMotorTransmission.hpp"
+#include "trajectory/timing/CentripetalAccelerationConstraint.hpp"
 #include "trajectory/timing/DifferentialDriveDynamicsConstraint.hpp"
 #include "trajectory/timing/TimingUtil.hpp"
+#include "trajectory/timing/TimingConstraint.hpp"
 #include "trajectory/TrajectoryUtil.hpp"
 
 namespace ck
@@ -62,14 +64,12 @@ namespace ck
 
         trajectory::Trajectory<trajectory::timing::TimedState<geometry::Pose2dWithCurvature>> DriveMotionPlanner::generateTrajectory(bool reversed,
                                                                                                                                      std::vector<geometry::Pose2d> waypoints,
-                                                                                                                                     std::vector<trajectory::timing::TimingConstraint<geometry::Pose2dWithCurvature>> constraints,
                                                                                                                                      double maximumVelocity,     // Inches per Second
                                                                                                                                      double maximumAcceleration, // Inches per Second^2
                                                                                                                                      double maximumVoltage)
         {
             return this->generateTrajectory(reversed,
                                             waypoints,
-                                            constraints,
                                             0.0,
                                             0.0,
                                             maximumVelocity,
@@ -79,7 +79,6 @@ namespace ck
 
         trajectory::Trajectory<trajectory::timing::TimedState<geometry::Pose2dWithCurvature>> DriveMotionPlanner::generateTrajectory(bool reversed,
                                                                                                                                      std::vector<geometry::Pose2d> waypoints,
-                                                                                                                                     std::vector<trajectory::timing::TimingConstraint<geometry::Pose2dWithCurvature>> constraints,
                                                                                                                                      double startVelocity,       // Inches per Second
                                                                                                                                      double endVelocity,         // Inches per Second
                                                                                                                                      double maximumVelocity,     // Inches per Second
@@ -116,8 +115,10 @@ namespace ck
             }
 
             // Create the constraint that the robot must be able to traverse the trajectory without ever applying more than the specified voltage.
+            trajectory::timing::CentripetalAccelerationConstraint centripetalAccelConstraint(kMaxCentripetalAccel);
             trajectory::timing::DifferentialDriveDynamicsConstraint<geometry::Pose2dWithCurvature> driveConstraints(*this->mModel, maximumVoltage);
-            constraints.push_back(driveConstraints);
+
+            std::vector<trajectory::timing::TimingConstraint<geometry::Pose2dWithCurvature> *> constraints {&centripetalAccelConstraint, &driveConstraints};
 
             trajectory::DistanceView<geometry::Pose2dWithCurvature> distanceView(trajectory);
             trajectory::Trajectory<trajectory::timing::TimedState<geometry::Pose2dWithCurvature>> timedTrajectory = trajectory::timing::TimingUtil::timeParameterizeTrajectory(reversed,

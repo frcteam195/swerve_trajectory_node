@@ -51,14 +51,12 @@ namespace ck
 
             trajectory::Trajectory<trajectory::timing::TimedState<geometry::Pose2dWithCurvature>> generateTrajectory(bool reversed,
                                                                                                                      std::vector<geometry::Pose2d> waypoints,
-                                                                                                                     std::vector<trajectory::timing::TimingConstraint<geometry::Pose2dWithCurvature>> constraints,
                                                                                                                      double maximumVelocity,   // Inches per Second
                                                                                                                      double maximumAcceleration, // Inches per Second^2
                                                                                                                      double maximumVoltage);
                                                                                                                      
             trajectory::Trajectory<trajectory::timing::TimedState<geometry::Pose2dWithCurvature>> generateTrajectory(bool reversed,
                                                                                                                      std::vector<geometry::Pose2d> waypoints,
-                                                                                                                     std::vector<trajectory::timing::TimingConstraint<geometry::Pose2dWithCurvature>> constraints,
                                                                                                                      double startVelocity, // Inches per Second
                                                                                                                      double endVelocity, // Inches per Second
                                                                                                                      double maximumVelocity, // Inches per Second
@@ -76,6 +74,7 @@ namespace ck
             static constexpr double kMaxDx = 2.0;
             static constexpr double kMaxDy = 0.25;
             static constexpr double kMaxDtheta = 0.0872665; // 5 Degrees
+            static constexpr double kMaxCentripetalAccel = 60.0;
 
             trajectory::TrajectoryIterator<trajectory::timing::TimedState<geometry::Pose2dWithCurvature>> *mCurrentTrajectory = NULL;
             trajectory::timing::TimedState<geometry::Pose2dWithCurvature> *mSetpoint = new trajectory::timing::TimedState<geometry::Pose2dWithCurvature>(geometry::Pose2dWithCurvature::identity());

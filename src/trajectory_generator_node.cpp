@@ -86,12 +86,9 @@ void generate_trajectories(void)
 
         std::vector<Pose2d> waypoints = ck::json::parse_json_waypoints(trajectory_json["waypoints"]);
 
-        std::vector<TimingConstraint<Pose2dWithCurvature>> constraints;
-
         Trajectory<TimedState<Pose2dWithCurvature>> generated_trajectory;
         generated_trajectory = motion_planner.generateTrajectory(trajectory_json["reversed"],
                                                                  waypoints,
-                                                                 constraints,
                                                                  max_acceleration,
                                                                  max_velocity,
                                                                  max_voltage);

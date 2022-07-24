@@ -39,7 +39,7 @@ namespace ck
                     bool reverse,
                     ck::trajectory::DistanceView<S> &distance_view,
                     double step_size,
-                    std::vector<TimingConstraint<S>> &constraints,
+                    std::vector<TimingConstraint<S> *> &constraints,
                     double start_velocity,
                     double end_velocity,
                     double max_velocity,
@@ -58,7 +58,7 @@ namespace ck
                 static ck::trajectory::Trajectory<TimedState<S>> timeParameterizeTrajectory(
                     bool reverse,
                     std::vector<S> &states,
-                    std::vector<TimingConstraint<S>> &constraints,
+                    std::vector<TimingConstraint<S> *> &constraints,
                     double start_velocity,
                     double end_velocity,
                     double max_velocity,
@@ -107,9 +107,9 @@ namespace ck
                             // state max accel.
 
                             // Enforce all velocity constraints.
-                            for (const TimingConstraint<S> &constraint : constraints)
+                            for (const TimingConstraint<S> *constraint : constraints)
                             {
-                                constraint_state.max_velocity = ck::math::min(constraint_state.max_velocity, constraint.getMaxVelocity(constraint_state.state));
+                                constraint_state.max_velocity = ck::math::min(constraint_state.max_velocity, constraint->getMaxVelocity(constraint_state.state));
                             }
                             if (constraint_state.max_velocity < 0.0)
                             {
@@ -118,16 +118,16 @@ namespace ck
                             }
 
                             // Now enforce all acceleration constraints.
-                            for (const TimingConstraint<S> &constraint : constraints)
+                            for (const TimingConstraint<S> *constraint : constraints)
                             {
-                                MinMaxAcceleration min_max_accel = constraint.getMinMaxAcceleration(constraint_state.state, (reverse ? -1.0 : 1.0) * constraint_state.max_velocity);
-                                if (!min_max_accel.valid())
-                                {
-                                    // This should never happen if constraints are well-behaved.
-                                    throw;
-                                }
-                                constraint_state.min_acceleration = ck::math::max(constraint_state.min_acceleration, reverse ? -min_max_accel.max_acceleration() : min_max_accel.min_acceleration());
-                                constraint_state.max_acceleration = ck::math::min(constraint_state.max_acceleration, reverse ? -min_max_accel.min_acceleration() : min_max_accel.max_acceleration());
+                                MinMaxAcceleration min_max_accel = constraint->getMinMaxAcceleration(constraint_state.state, (reverse ? -1.0 : 1.0) * constraint_state.max_velocity);
+                            if (!min_max_accel.valid())
+                            {
+                                // This should never happen if constraints are well-behaved.
+                                throw;
+                            }
+                            constraint_state.min_acceleration = ck::math::max(constraint_state.min_acceleration, reverse ? -min_max_accel.max_acceleration() : min_max_accel.min_acceleration());
+                            constraint_state.max_acceleration = ck::math::min(constraint_state.max_acceleration, reverse ? -min_max_accel.min_acceleration() : min_max_accel.max_acceleration());
                             }
                             if (constraint_state.min_acceleration > constraint_state.max_acceleration)
                             {
@@ -194,15 +194,15 @@ namespace ck
                             }
 
                             // Now check all acceleration constraints with the lower max velocity.
-                            for (const TimingConstraint<S> &constraint : constraints)
+                            for (const TimingConstraint<S> *constraint : constraints)
                             {
-                                MinMaxAcceleration min_max_accel = constraint.getMinMaxAcceleration(constraint_state.state, (reverse ? -1.0 : 1.0) * constraint_state.max_velocity);
-                                if (!min_max_accel.valid())
-                                {
-                                    throw;
-                                }
-                                constraint_state.min_acceleration = ck::math::max(constraint_state.min_acceleration, reverse ? -min_max_accel.max_acceleration() : min_max_accel.min_acceleration());
-                                constraint_state.max_acceleration = ck::math::min(constraint_state.max_acceleration, reverse ? -min_max_accel.min_acceleration() : min_max_accel.max_acceleration());
+                                MinMaxAcceleration min_max_accel = constraint->getMinMaxAcceleration(constraint_state.state, (reverse ? -1.0 : 1.0) * constraint_state.max_velocity);
+                            if (!min_max_accel.valid())
+                            {
+                                throw;
+                            }
+                            constraint_state.min_acceleration = ck::math::max(constraint_state.min_acceleration, reverse ? -min_max_accel.max_acceleration() : min_max_accel.min_acceleration());
+                            constraint_state.max_acceleration = ck::math::min(constraint_state.max_acceleration, reverse ? -min_max_accel.min_acceleration() : min_max_accel.max_acceleration());
                             }
                             if (constraint_state.min_acceleration > constraint_state.max_acceleration)
                             {

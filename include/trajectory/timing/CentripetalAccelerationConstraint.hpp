@@ -23,6 +23,8 @@ namespace ck
                 }
                 MinMaxAcceleration getMinMaxAcceleration(const ck::geometry::Pose2dWithCurvature &state, double velocity) const override
                 {
+                    (void)state;
+                    (void)velocity;
                     // return MinMaxAcceleration::kNoLimits;
                     return MinMaxAcceleration();
                 }
