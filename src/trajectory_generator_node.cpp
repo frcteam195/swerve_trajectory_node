@@ -5,10 +5,9 @@
 #include "ck_utilities/Logger.hpp"
 #include "ck_utilities/ParameterHelper.hpp"
 #include "ck_utilities/geometry/Pose2dWithCurvature.hpp"
-#include "parsers/JsonParser.hpp"
-#include "plannners/DriveMotionPlanner.hpp"
-#include "trajectory/timing/TimingConstraint.hpp"
-#include "trajectory/Trajectory.hpp"
+#include "ck_utilities/planners/DriveMotionPlanner.hpp"
+#include "ck_utilities/trajectory/timing/TimingConstraint.hpp"
+#include "ck_utilities/trajectory/Trajectory.hpp"
 
 #include "ros/ros.h"
 
@@ -19,6 +18,8 @@
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "nlohmann/json.hpp"
+
+#include "parsers/JsonParser.hpp"
 
 #include <map>
 #include <string>
