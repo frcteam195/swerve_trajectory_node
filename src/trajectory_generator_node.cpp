@@ -4,7 +4,7 @@
 
 #include "ck_utilities/Logger.hpp"
 #include "ck_utilities/ParameterHelper.hpp"
-#include "ck_utilities/geometry/Pose2dWithCurvature.hpp"
+#include "ck_utilities/team254_geometry/Pose2dWithCurvature.hpp"
 #include "ck_utilities/planners/DriveMotionPlanner.hpp"
 #include "ck_utilities/trajectory/timing/TimingConstraint.hpp"
 #include "ck_utilities/trajectory/Trajectory.hpp"
@@ -26,7 +26,7 @@
 
 namespace fs = boost::filesystem;
 
-using namespace ck::geometry;
+using namespace ck::team254_geometry;
 using namespace ck::trajectory;
 using namespace ck::trajectory::timing;
 
