@@ -36,7 +36,7 @@ ros::NodeHandle *node;
 
 std::map<std::string, trajectory_generator_node::OutputTrajectory> output_map;
 
-OutputTrajectory package_trajectory(std::string name, Trajectory<TimedState<Pose2dWithCurvature>> trajectory)
+OutputTrajectory package_trajectory(std::string name, Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> trajectory)
 {
     OutputTrajectory output = OutputTrajectory();
 
@@ -47,8 +47,8 @@ OutputTrajectory package_trajectory(std::string name, Trajectory<TimedState<Pose
     {
         geometry_msgs::PoseStamped pose_stamped = geometry_msgs::PoseStamped();
 
-        pose_stamped.pose.position.x = trajectory.getPoint(i).state_.state().getTranslation().x();
-        pose_stamped.pose.position.y = trajectory.getPoint(i).state_.state().getTranslation().y();
+        pose_stamped.pose.position.x = trajectory.getState(i).state().getTranslation().x();
+        pose_stamped.pose.position.y = trajectory.getState(i).state().getTranslation().y();
         pose_stamped.pose.position.z = 0.0;
 
         tf2::Quaternion rotation;
@@ -87,12 +87,12 @@ void generate_trajectories(void)
 
         std::vector<Pose2d> waypoints = ck::json::parse_json_waypoints(trajectory_json["waypoints"]);
 
-        Trajectory<TimedState<Pose2dWithCurvature>> generated_trajectory;
-        generated_trajectory = motion_planner.generateTrajectory(trajectory_json["reversed"],
-                                                                 waypoints,
-                                                                 max_velocity,
-                                                                 max_acceleration,
-                                                                 max_voltage);
+        Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> generated_trajectory;
+        // generated_trajectory = motion_planner.generateTrajectory(trajectory_json["reversed"],
+        //                                                          waypoints,
+        //                                                          max_velocity,
+        //                                                          max_acceleration,
+        //                                                          max_voltage);
 
         // Convert the CK trajectory into a ROS path.
         trajectory_generator_node::OutputTrajectory output_trajectory = package_trajectory(trajectory_json["name"], generated_trajectory);
