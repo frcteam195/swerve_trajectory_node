@@ -70,6 +70,24 @@ void generate_trajectories(void)
 
     ck::planners::DriveMotionPlanner motion_planner;
 
+    std::vector<Pose2d> waypoints;
+    std::vector<Rotation2d> headings;
+
+    waypoints.push_back(Pose2d(Translation2d::identity(), Rotation2d::fromDegrees(0)));
+    headings.push_back(Rotation2d::fromDegrees(0));
+    waypoints.push_back(Pose2d(170.0, 0.0, Rotation2d::fromDegrees(0)));
+    headings.push_back(Rotation2d::fromDegrees(90));
+
+    // waypoints.push_back(Pose2d(0, 0, Rotation2d::fromDegrees(0)));
+    // headings.push_back(Rotation2d::fromDegrees(0));
+    // waypoints.push_back(Pose2d(100, -100, Rotation2d::fromDegrees(90)));
+    // headings.push_back(Rotation2d::fromDegrees(-90));
+
+    Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> generated_traj;
+    generated_traj = motion_planner.generateTrajectory(false, waypoints, headings, max_velocity, max_acceleration, max_voltage);
+
+    return;
+
     fs::path directory_path(trajectory_directory);
 
     if (!fs::exists(directory_path))
