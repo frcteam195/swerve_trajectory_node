@@ -4,14 +4,13 @@
 #include "nlohmann/json.hpp"
 
 #include <vector>
+#include <utility>
 
 namespace ck
 {
     namespace json
     {
-
-        std::vector<team254_geometry::Pose2d> parse_json_waypoints(nlohmann::json waypoints);
-
+        std::pair<std::vector<team254_geometry::Pose2d>, std::vector<team254_geometry::Rotation2d>> parse_json_waypoints(nlohmann::json json_waypoints);
     } // namespace json
 
 } // namespace ck

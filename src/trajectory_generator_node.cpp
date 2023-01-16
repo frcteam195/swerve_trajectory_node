@@ -23,6 +23,7 @@
 
 #include <map>
 #include <string>
+#include <utility>
 
 namespace fs = boost::filesystem;
 
@@ -40,25 +41,31 @@ OutputTrajectory package_trajectory(std::string name, Trajectory<TimedState<Pose
 {
     OutputTrajectory output = OutputTrajectory();
 
-    output.path.header.frame_id = name;
-    output.path.header.stamp = ros::Time::now();
+    output.name = name;
 
     for (int i = 0; i < trajectory.length(); ++i)
     {
-        geometry_msgs::PoseStamped pose_stamped = geometry_msgs::PoseStamped();
+        geometry_msgs::Twist waypoint = geometry_msgs::Twist();
+        waypoint.linear.x = trajectory.getState(i).state().getTranslation().x();
+        waypoint.linear.y = trajectory.getState(i).state().getTranslation().y();
+        waypoint.linear.z = 0.0;
 
-        pose_stamped.pose.position.x = trajectory.getState(i).state().getTranslation().x();
-        pose_stamped.pose.position.y = trajectory.getState(i).state().getTranslation().y();
-        pose_stamped.pose.position.z = 0.0;
+        waypoint.angular.x = 0.0;
+        waypoint.angular.y = 0.0;
+        waypoint.angular.z = trajectory.getState(i).state().getRotation().getRadians();
 
-        tf2::Quaternion rotation;
-        rotation.setRPY(0.0, 0.0, trajectory.getPoint(i).state_.state().getRotation().getRadians());
-        rotation.normalize();
-        pose_stamped.pose.orientation = tf2::toMsg(rotation);
+        geometry_msgs::Pose heading = geometry_msgs::Pose();
+        heading.position.x = 0.0;
+        heading.position.y = 0.0;
+        heading.position.z = 0.0;
 
-        output.path.poses.push_back(pose_stamped);
-        output.velocities.push_back(trajectory.getState(i).velocity());
-        output.accelerations.push_back(trajectory.getState(i).acceleration());
+        tf2::Quaternion orientation;
+        orientation.setRPY(0.0, 0.0, trajectory.getHeading(i).state().getRadians());
+        orientation.normalize();
+        heading.orientation = tf2::toMsg(orientation);
+
+        output.waypoints.push_back(waypoint);
+        output.headings.push_back(heading);
     }
 
     return output;
@@ -69,24 +76,6 @@ void generate_trajectories(void)
     ck::log_info << "Generating all trajectories defined in: " << trajectory_directory << std::flush;
 
     ck::planners::DriveMotionPlanner motion_planner;
-
-    std::vector<Pose2d> waypoints;
-    std::vector<Rotation2d> headings;
-
-    waypoints.push_back(Pose2d(Translation2d::identity(), Rotation2d::fromDegrees(0)));
-    headings.push_back(Rotation2d::fromDegrees(0));
-    waypoints.push_back(Pose2d(170.0, 0.0, Rotation2d::fromDegrees(0)));
-    headings.push_back(Rotation2d::fromDegrees(90));
-
-    // waypoints.push_back(Pose2d(0, 0, Rotation2d::fromDegrees(0)));
-    // headings.push_back(Rotation2d::fromDegrees(0));
-    // waypoints.push_back(Pose2d(100, -100, Rotation2d::fromDegrees(90)));
-    // headings.push_back(Rotation2d::fromDegrees(-90));
-
-    Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> generated_traj;
-    generated_traj = motion_planner.generateTrajectory(false, waypoints, headings, max_velocity, max_acceleration, max_voltage);
-
-    return;
 
     fs::path directory_path(trajectory_directory);
 
@@ -103,14 +92,15 @@ void generate_trajectories(void)
         fs::ifstream trajectory_buffer{trajectory_configuration.path()};
         nlohmann::json trajectory_json = nlohmann::json::parse(trajectory_buffer);
 
-        std::vector<Pose2d> waypoints = ck::json::parse_json_waypoints(trajectory_json["waypoints"]);
+        std::pair<std::vector<Pose2d>, std::vector<Rotation2d>> path_points = ck::json::parse_json_waypoints(trajectory_json["waypoints"]);
 
         Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> generated_trajectory;
-        // generated_trajectory = motion_planner.generateTrajectory(trajectory_json["reversed"],
-        //                                                          waypoints,
-        //                                                          max_velocity,
-        //                                                          max_acceleration,
-        //                                                          max_voltage);
+        generated_trajectory = motion_planner.generateTrajectory(trajectory_json["reversed"],
+                                                                 path_points.first,
+                                                                 path_points.second,
+                                                                 max_velocity,
+                                                                 max_acceleration,
+                                                                 max_voltage);
 
         // Convert the CK trajectory into a ROS path.
         trajectory_generator_node::OutputTrajectory output_trajectory = package_trajectory(trajectory_json["name"], generated_trajectory);
