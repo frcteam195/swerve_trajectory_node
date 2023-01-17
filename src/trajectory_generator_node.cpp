@@ -2,6 +2,8 @@
 #include "trajectory_generator_node/GetTrajectory.h"
 #include "trajectory_generator_node/OutputTrajectory.h"
 
+#include "ck_ros_msgs_node/Swerve_Drivetrain_Auto_Control.h"
+
 #include "ck_utilities/Logger.hpp"
 #include "ck_utilities/ParameterHelper.hpp"
 #include "ck_utilities/team254_geometry/Pose2dWithCurvature.hpp"
@@ -35,7 +37,8 @@ using namespace trajectory_generator_node;
 
 ros::NodeHandle *node;
 
-std::map<std::string, trajectory_generator_node::OutputTrajectory> output_map;
+// std::map<std::string, trajectory_generator_node::OutputTrajectory> traj_map;
+std::map<std::string, Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>> traj_map;
 
 OutputTrajectory package_trajectory(std::string name, Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> trajectory)
 {
@@ -45,14 +48,17 @@ OutputTrajectory package_trajectory(std::string name, Trajectory<TimedState<Pose
 
     for (int i = 0; i < trajectory.length(); ++i)
     {
-        geometry_msgs::Twist waypoint = geometry_msgs::Twist();
-        waypoint.linear.x = trajectory.getState(i).state().getTranslation().x();
-        waypoint.linear.y = trajectory.getState(i).state().getTranslation().y();
-        waypoint.linear.z = 0.0;
+        geometry_msgs::Pose waypoint = geometry_msgs::Pose();
+        waypoint.position.x = trajectory.getState(i).state().getTranslation().x();
+        waypoint.position.y = trajectory.getState(i).state().getTranslation().y();
+        waypoint.position.z = 0.0;
+        
+        std::cout << waypoint.position.x << "," << waypoint.position.y << std::endl;
 
-        waypoint.angular.x = 0.0;
-        waypoint.angular.y = 0.0;
-        waypoint.angular.z = trajectory.getState(i).state().getRotation().getRadians();
+        tf2::Quaternion track;
+        track.setRPY(0.0, 0.0, trajectory.getState(i).state().getRotation().getRadians());
+        track.normalize();
+        waypoint.orientation = tf2::toMsg(track);
 
         geometry_msgs::Pose heading = geometry_msgs::Pose();
         heading.position.x = 0.0;
@@ -104,23 +110,26 @@ void generate_trajectories(void)
 
         // Convert the CK trajectory into a ROS path.
         trajectory_generator_node::OutputTrajectory output_trajectory = package_trajectory(trajectory_json["name"], generated_trajectory);
-        output_map.insert({trajectory_json["name"], output_trajectory});
+        (void)output_trajectory;
+        traj_map.insert({trajectory_json["name"], generated_trajectory});
     }
 }
 
 bool get_trajectory(trajectory_generator_node::GetTrajectory::Request &request, trajectory_generator_node::GetTrajectory::Response &response)
 {
-    ck::log_info << "Getting Trajectory: " << request.path_name << std::flush;
+    // ck::log_info << "Getting Trajectory: " << request.path_name << std::flush;
 
-    try
-    {
-        response.trajectory = output_map.at(request.path_name);
-    }
-    catch(const std::out_of_range& exception)
-    {
-        ck::log_error << exception.what() << std::flush;
-        return false;
-    }
+    // try
+    // {
+    //     response.trajectory = traj_map.at(request.path_name);
+    // }
+    // catch(const std::out_of_range& exception)
+    // {
+    //     ck::log_error << exception.what() << std::flush;
+    //     return false;
+    // }
+    (void)request;
+    (void)response;
     
     return true;
 }
@@ -159,6 +168,9 @@ int main(int argc, char **argv)
     ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
 
     generate_trajectories();
+
+    // Send traj updates on /SwerveAutoControl
+    // send Swerve_Drivetrain_Auto_Control
 
     ros::spin();
     return 0;
