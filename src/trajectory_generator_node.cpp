@@ -32,6 +32,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <atomic>
 
 namespace fs = boost::filesystem;
 
@@ -47,12 +48,12 @@ ros::NodeHandle *node;
 // std::map<std::string, trajectory_generator_node::OutputTrajectory> traj_map;
 std::map<std::string, Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>> traj_map;
 
-DriveMotionPlanner *motion_planner = new DriveMotionPlanner();
+DriveMotionPlanner motion_planner;
 
-bool traj_running = false;
-Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> *current_trajectory = nullptr;
-TimedView<Pose2dWithCurvature, Rotation2d> *timed_view = new TimedView(*current_trajectory);
-Pose2d *current_pose = new Pose2d();
+std::atomic_bool traj_running{false};
+Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> current_trajectory;
+TimedView<Pose2dWithCurvature, Rotation2d> timed_view(current_trajectory);
+Pose2d current_pose;
 double current_timestamp = 0.0;
 
 OutputTrajectory package_trajectory(std::string name, Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> trajectory)
@@ -114,7 +115,7 @@ void generate_trajectories(void)
         std::pair<std::vector<Pose2d>, std::vector<Rotation2d>> path_points = ck::json::parse_json_waypoints(trajectory_json["waypoints"]);
 
         Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> generated_trajectory;
-        generated_trajectory = motion_planner->generateTrajectory(trajectory_json["reversed"],
+        generated_trajectory = motion_planner.generateTrajectory(trajectory_json["reversed"],
                                                                  path_points.first,
                                                                  path_points.second,
                                                                  max_velocity,
@@ -130,32 +131,13 @@ void generate_trajectories(void)
 
 void robot_odometry_subscriber(const nav_msgs::Odometry &odom)
 {
-    // geometry_msgs::Pose drivetrain_pose = odom.pose.pose;
-    // double x = ck::math::meters_to_inches(drivetrain_pose.position.x);
-    // double y = ck::math::meters_to_inches(drivetrain_pose.position.y);
-
     geometry::Pose drivetrain_pose = geometry::to_pose(odom.pose.pose);
-    drivetrain_pose.orientation.x();
-    // (void)drivetrain_pose.position.
 
-    // tf2::Quaternion heading(
-    //     drivetrain_pose.orientation.x,
-    //     drivetrain_pose.orientation.y,
-    //     drivetrain_pose.orientation.z,
-    //     drivetrain_pose.orientation.w);
-    // tf2::Matrix3x3 headingM(heading);
-    // double roll, pitch, yaw;
-    // headingM.getRPY(roll, pitch, yaw);
+    double x = ck::math::meters_to_inches(drivetrain_pose.position.x());
+    double y = ck::math::meters_to_inches(drivetrain_pose.position.y());
+    double track = drivetrain_pose.orientation.yaw();
 
-    // *current_pose = Pose2d(x, y, Rotation2d::fromRadians(yaw));
-	// geometry::Twist drivetrain_twist = geometry::to_twist(odom.twist.twist);
-	// drivetrain_diagnostics.field_actual_x_translation_m_s = drivetrain_twist.linear.x();
-	// drivetrain_diagnostics.field_actual_y_translation_m_s = drivetrain_twist.linear.y();
-	// drivetrain_diagnostics.actual_angular_speed_deg_s = ck::math::rad2deg(drivetrain_twist.angular.yaw());
-	// drivetrain_diagnostics.actual_total_speed_m_s = drivetrain_twist.linear.norm();
-
-	// robot_transform.angular = geometry::to_rotation(odom.pose.pose.orientation);
-	// robot_transform.linear = geometry::to_translation(odom.pose.pose.position);
+    current_pose = Pose2d(x, y, Rotation2d::fromRadians(track));
 }
 
 bool start_trajectory(trajectory_generator_node::StartTrajectory::Request &request, trajectory_generator_node::StartTrajectory::Response &response)
@@ -166,11 +148,11 @@ bool start_trajectory(trajectory_generator_node::StartTrajectory::Request &reque
 
     try
     {
-        current_trajectory = &traj_map.at(request.trajectory_name);
-        motion_planner->reset();
-        *timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(*current_trajectory);
-        TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(timed_view);
-        motion_planner->setTrajectory(traj_it);
+        current_trajectory = traj_map.at(request.trajectory_name);
+        timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(current_trajectory);
+        TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
+        motion_planner.reset();
+        motion_planner.setTrajectory(traj_it);
         traj_running = true;
         response.accepted = true;
     }
@@ -231,9 +213,15 @@ int main(int argc, char **argv)
 
         if (traj_running)
         {
+            if (motion_planner.isDone())
+            {
+                traj_running = false;
+                continue;
+            }
+
             current_timestamp = ros::Time::now().toSec();
 
-            ChassisSpeeds output = motion_planner->update(current_timestamp, *current_pose);
+            ChassisSpeeds output = motion_planner.update(current_timestamp, current_pose);
 
             Pose2d robot_pose_vel(output.vxMetersPerSecond * 0.01, output.vyMetersPerSecond * 0.01, Rotation2d::fromRadians(output.omegaRadiansPerSecond * 0.01));
             Twist2d twist_vel = Pose2d::log(robot_pose_vel);
@@ -253,16 +241,12 @@ int main(int argc, char **argv)
             swerve_auto_control.pose.position.z = 0.0;
             
             tf2::Quaternion heading;
-            heading.setRPY(0.0, 0.0, motion_planner->getHeadingSetpoint().state().getRadians());
+            heading.setRPY(0.0, 0.0, motion_planner.getHeadingSetpoint().state().getRadians());
             heading.normalize();
             swerve_auto_control.pose.orientation = tf2::toMsg(heading);
 
             swerve_auto_control_publisher.publish(swerve_auto_control);
 
-            if (motion_planner->isDone())
-            {
-                traj_running = false;
-            }
 
         //            Pose2d robot_pose_vel = new Pose2d(mPeriodicIO.des_chassis_speeds.vxMetersPerSecond * Constants.kLooperDt,
         //         mPeriodicIO.des_chassis_speeds.vyMetersPerSecond * Constants.kLooperDt,
