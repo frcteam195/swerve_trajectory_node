@@ -44,8 +44,9 @@ jobs:
           find . -maxdepth 1 2>/dev/null | grep -v ^.$ | grep -e ".*_node" -e ".*_planner" | sed s:./::g | xargs -I {} /tmp/ros-ci-helper/fetch_ros_dependencies.sh ./{}/package.xml
           find . -maxdepth 1 2>/dev/null | grep -v ^.$ | grep -e ".*_node" -e ".*_planner" | sed s:./::g | xargs -I {} /tmp/ros-ci-helper/fetch_ros_dependencies.sh ./{}/package.xml
           find . -maxdepth 1 2>/dev/null | grep -v ^.$ | grep -e ".*_node" -e ".*_planner" | sed s:./::g | xargs -I {} /tmp/ros-ci-helper/fetch_ros_dependencies.sh ./{}/package.xml
+          cd /opt/ros/*
+          source setup.bash
           cd /tmp/_Robot/catkin_ws/src
-          source /opt/ros/melodic/setup.bash
           find ../../.. -maxdepth 1 2>/dev/null | grep -v ^../../..$ | grep -e ".*_node" -e ".*_planner" | sed s:../../../::g | xargs -I {} ln -s ../../../{} {}
           mkdir -p /tmp/third_party_libs
           cd /tmp/third_party_libs
