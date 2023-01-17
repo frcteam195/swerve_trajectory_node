@@ -1,3 +1,3 @@
-nav_msgs/Path path
-float64[] velocities
-float64[] accelerations
+string name
+geometry_msgs/Pose[] waypoints
+geometry_msgs/Pose[] headings
