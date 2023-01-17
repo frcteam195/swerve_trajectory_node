@@ -1,5 +1,0 @@
-# Inputs
-string path_name
----
-# Outputs
-trajectory_generator_node/OutputTrajectory trajectory

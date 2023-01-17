@@ -1,0 +1,5 @@
+# Inputs
+string trajectory_name
+---
+# Outputs
+bool accepted
