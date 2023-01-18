@@ -52,7 +52,7 @@ DriveMotionPlanner motion_planner;
 
 std::atomic_bool traj_running{false};
 Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> current_trajectory;
-TimedView<Pose2dWithCurvature, Rotation2d> timed_view(current_trajectory);
+TimedView<Pose2dWithCurvature, Rotation2d> timed_view;
 Pose2d current_pose;
 double current_timestamp = 0.0;
 
@@ -142,6 +142,7 @@ void robot_odometry_subscriber(const nav_msgs::Odometry &odom)
 
 bool start_trajectory(trajectory_generator_node::StartTrajectory::Request &request, trajectory_generator_node::StartTrajectory::Response &response)
 {
+    ck::log_info << "Start trajectory requested!" << std::flush;
     ck::log_info << "Request to start trajectory: " << request.trajectory_name << std::flush;
 
     if (traj_running) return false;
@@ -158,10 +159,13 @@ bool start_trajectory(trajectory_generator_node::StartTrajectory::Request &reque
     }
     catch (const std::out_of_range& exception)
     {
+        ck::log_info << "it bad" << std::flush;
         ck::log_error << exception.what() << std::flush;
+        response.accepted = false;
         return false;
     }
 
+    ck::log_info << "Accepted trajectory" << std::flush;
     return true;
 }
 
@@ -196,6 +200,8 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // std::cout << "pre sub" << std::endl;
+
     // ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
     ros::ServiceServer service_start = node->advertiseService("start_trajectory", start_trajectory);
 	ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
@@ -209,8 +215,11 @@ int main(int argc, char **argv)
     ros::Rate rate(100);
     while (ros::ok())
     {
+        // ck::log_info << "progress: " <<  << std::flush;
         ros::spinOnce();
+        // std::cout << "post spin" << std::endl;
 
+        ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control swerve_auto_control;
         if (traj_running)
         {
             if (motion_planner.isDone())
@@ -227,7 +236,6 @@ int main(int argc, char **argv)
             Twist2d twist_vel = Pose2d::log(robot_pose_vel);
             ChassisSpeeds updated_output(twist_vel.dx / 0.01, twist_vel.dy / 0.01, twist_vel.dtheta / 0.01);
             
-            ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control swerve_auto_control;
             swerve_auto_control.twist.linear.x = updated_output.vxMetersPerSecond;
             swerve_auto_control.twist.linear.y = updated_output.vyMetersPerSecond;
             swerve_auto_control.twist.linear.z = 0.0;
@@ -245,7 +253,6 @@ int main(int argc, char **argv)
             heading.normalize();
             swerve_auto_control.pose.orientation = tf2::toMsg(heading);
 
-            swerve_auto_control_publisher.publish(swerve_auto_control);
 
 
         //            Pose2d robot_pose_vel = new Pose2d(mPeriodicIO.des_chassis_speeds.vxMetersPerSecond * Constants.kLooperDt,
@@ -257,9 +264,11 @@ int main(int argc, char **argv)
  
  
         }
+        swerve_auto_control_publisher.publish(swerve_auto_control);
 
         rate.sleep();
     }
+    std::cout << "ros is not ok" << std::flush;
 
     return 0;
 }
