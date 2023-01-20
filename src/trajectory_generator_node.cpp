@@ -135,9 +135,9 @@ void robot_odometry_subscriber(const nav_msgs::Odometry &odom)
 
     double x = ck::math::meters_to_inches(drivetrain_pose.position.x());
     double y = ck::math::meters_to_inches(drivetrain_pose.position.y());
-    double track = drivetrain_pose.orientation.yaw();
+    double heading = drivetrain_pose.orientation.yaw();
 
-    current_pose = Pose2d(x, y, Rotation2d::fromRadians(track));
+    current_pose = Pose2d(x, y, Rotation2d::fromRadians(heading));
 }
 
 bool start_trajectory(trajectory_generator_node::StartTrajectory::Request &request, trajectory_generator_node::StartTrajectory::Response &response)
@@ -220,6 +220,10 @@ int main(int argc, char **argv)
         // std::cout << "post spin" << std::endl;
 
         ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control swerve_auto_control;
+        geometry::Twist blank_twist;
+        geometry::Pose blank_pose;
+        swerve_auto_control.twist = geometry::to_msg(blank_twist);
+        swerve_auto_control.pose = geometry::to_msg(blank_pose);
         if (traj_running)
         {
             if (motion_planner.isDone())
