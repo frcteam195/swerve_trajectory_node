@@ -4,7 +4,7 @@
 
 #include "ck_ros_msgs_node/Swerve_Drivetrain_Auto_Control.h"
 
-// #include "frc_robot_utilities/frc_robot_utilities.hpp"
+#include "frc_robot_utilities/frc_robot_utilities.hpp"
 
 #include "ck_utilities/Logger.hpp"
 #include "ck_utilities/ParameterHelper.hpp"
@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 
     node = &n;
 
-    // register_for_robot_updates(node);
+    register_for_robot_updates(node);
 
     bool required_params_found = true;
     required_params_found &= n.getParam(CKSP(max_acceleration), max_acceleration);
@@ -245,11 +245,11 @@ int main(int argc, char **argv)
     {
         ros::spinOnce();
 
-        // if (robot_status.get_mode() != RobotMode::AUTONOMOUS && traj_running)
-        // {
-        //     traj_running = false;
-        //     motion_planner.reset();
-        // }
+        if (robot_status.get_mode() != RobotMode::AUTONOMOUS && traj_running)
+        {
+            traj_running = false;
+            motion_planner.reset();
+        }
 
         ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control swerve_auto_control;
         geometry::Twist blank_twist;
