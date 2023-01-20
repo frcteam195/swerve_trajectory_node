@@ -64,26 +64,53 @@ double current_timestamp = 0.0;
 
 nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> trajectory)
 {
+    (void)name;
+
     ros::Time stamp = ros::Time::now();
 
     nav_msgs::Path path;
     path.header.stamp = stamp;
-    path.header.frame_id = name;
+    path.header.frame_id = "odom";
 
     for (int i = 0; i < trajectory.length(); i++)
     {
         geometry_msgs::PoseStamped pose_stamped;
         pose_stamped.header.stamp = stamp;
-        pose_stamped.header.frame_id = "traj_point_" + std::to_string(i);
+        pose_stamped.header.frame_id = "odom";
 
         geometry::Pose pose;
-        pose.position.x(trajectory.getState(i).state().getTranslation().x());
-        pose.position.y(trajectory.getState(i).state().getTranslation().y());
-        pose.orientation.yaw(trajectory.getState(i).state().getRotation().getRadians());
+        pose.position.x(ck::math::inches_to_meters(trajectory.getState(i).state().getTranslation().x()));
+        pose.position.y(ck::math::inches_to_meters(trajectory.getState(i).state().getTranslation().y()));
+        pose.orientation.yaw(trajectory.getHeading(i).state().getRadians());
+        
+        // std::cout << std::setw(5) << std::left << pose.position.x();
+        // std::cout << std::setw(5) << std::left << pose.position.y();
+        // std::cout << std::setw(5) << std::left << pose.orientation.yaw();
+        // std::cout << trajectory.getHeading(i).state().getRotation().getDegrees() << std::endl;
+
 
         pose_stamped.pose = geometry::to_msg(pose);
         path.poses.push_back(pose_stamped);
     }
+
+    // std::cout << "\n\n\n";
+
+    // timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(trajectory);
+    // TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
+
+    // std::cout << "Traj len: " << traj_it.trajectory().length() << std::endl;
+    // std::cout << traj_it.getRemainingProgress() << std::endl;
+
+    // double totalProg = traj_it.getRemainingProgress();
+
+    // for (double i = 0; i < totalProg; i += 0.1)
+    // {
+    //     int index = (int)std::floor(trajectory.length() * i / totalProg);
+    //     // std::cout << traj_it.getHeading().state().getDegrees() << std::endl;
+    //     // traj_it.advance(0.1);
+    //     // std::cout << traj_it.preview(i).heading().state().getDegrees() << std::endl;
+    //     std::cout << index << ": " << traj_it.trajectory().getHeading(index).state().getDegrees() << std::endl;
+    // }
 
     return path;
 }
@@ -140,7 +167,7 @@ bool start_trajectory(trajectory_generator_node::StartTrajectory::Request &reque
     ck::log_info << "Start trajectory requested!" << std::endl;
     ck::log_info << "Request to start trajectory: " << request.trajectory_name << std::endl;
 
-    if (traj_running || !motion_planner.isDone()) return false;
+    if (traj_running) return false;
 
     try
     {
@@ -205,7 +232,7 @@ int main(int argc, char **argv)
     static ros::ServiceServer service_start = node->advertiseService("start_trajectory", start_trajectory);
 	static ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
     static ros::Publisher swerve_auto_control_publisher = node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>("/SwerveAutoControl", 10);
-    static ros::Publisher path_publisher_ = node->advertise<nav_msgs::Path>("/CurrentPath", 10);
+    static ros::Publisher path_publisher_ = node->advertise<nav_msgs::Path>("/CurrentPath", 10, true);
     path_publisher = &path_publisher_;
 
     generate_trajectories();
