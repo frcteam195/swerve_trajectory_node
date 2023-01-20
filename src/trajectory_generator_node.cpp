@@ -79,7 +79,7 @@ nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2d
         geometry::Pose pose;
         pose.position.x(trajectory.getState(i).state().getTranslation().x());
         pose.position.y(trajectory.getState(i).state().getTranslation().y());
-        pose.orientation.yaw(trajectory.getHeading(i).state().getRadians());
+        pose.orientation.yaw(trajectory.getState(i).state().getRotation().getRadians());
 
         pose_stamped.pose = geometry::to_msg(pose);
         path.poses.push_back(pose_stamped);
