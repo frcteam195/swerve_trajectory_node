@@ -63,7 +63,9 @@
   <buildtool_depend>catkin</buildtool_depend>
   <test_depend>rosunit</test_depend>
 
+<!--
   <build_ci_depend>ck_ros_msgs_2023_node</build_ci_depend>
+-->
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
