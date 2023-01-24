@@ -61,8 +61,7 @@ Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> current_traj
 TimedView<Pose2dWithCurvature, Rotation2d> timed_view;
 Pose2d current_pose;
 double current_timestamp = 0.0;
-// double persistHeadingRads = 0.0;
-double persistHeadingRads = ck::math::deg2rad(45.0);
+double persistHeadingRads = 0.0;
 
 nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> trajectory)
 {
