@@ -9,6 +9,7 @@
 #include "ck_utilities/Logger.hpp"
 #include "ck_utilities/ParameterHelper.hpp"
 #include "ck_utilities/team254_geometry/Pose2dWithCurvature.hpp"
+#include "ck_utilities/team254_swerve/SwerveDriveKinematics.hpp"
 #include "ck_utilities/planners/DriveMotionPlanner.hpp"
 #include "ck_utilities/trajectory/timing/TimingConstraint.hpp"
 #include "ck_utilities/trajectory/Trajectory.hpp"
@@ -94,24 +95,30 @@ nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2d
         path.poses.push_back(pose_stamped);
     }
 
-    // std::cout << "\n\n\n";
+    std::cout << "\n\n\n";
 
-    // timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(trajectory);
-    // TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
+    timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(trajectory);
+    TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
 
-    // std::cout << "Traj len: " << traj_it.trajectory().length() << std::endl;
-    // std::cout << traj_it.getRemainingProgress() << std::endl;
+    std::cout << name << std::endl;
+    std::cout << "Traj len: " << traj_it.trajectory().length() << std::endl;
+    std::cout << traj_it.getRemainingProgress() << std::endl;
 
-    // double totalProg = traj_it.getRemainingProgress();
+    double totalProg = traj_it.getRemainingProgress();
 
-    // for (double i = 0; i < totalProg; i += 0.1)
-    // {
-    //     int index = (int)std::floor(trajectory.length() * i / totalProg);
-    //     // std::cout << traj_it.getHeading().state().getDegrees() << std::endl;
-    //     // traj_it.advance(0.1);
-    //     // std::cout << traj_it.preview(i).heading().state().getDegrees() << std::endl;
-    //     std::cout << index << ": " << traj_it.trajectory().getHeading(index).state().getDegrees() << std::endl;
-    // }
+    double last_heading = 0.0;
+    for (double i = 0; i < totalProg; i += 0.01)
+    {
+        int index = (int)std::floor(trajectory.length() * i / totalProg);
+        // std::cout << traj_it.getHeading().state().getDegrees() << std::endl;
+        // traj_it.advance(0.1);
+        // std::cout << traj_it.preview(i).heading().state().getDegrees() << std::endl;
+        double desired_heading = traj_it.trajectory().getHeading(index).state().getDegrees();
+        double heading_diff = desired_heading - last_heading;
+        last_heading = desired_heading;
+        // std::cout << index << ": " << desired_heading << std::endl;
+        std::cout << index << ": " << heading_diff / 0.01 << std::endl;
+    }
 
     return path;
 }
@@ -149,6 +156,7 @@ void generate_trajectories(void)
         nav_msgs::Path output_path = package_trajectory(trajectory_json["name"], generated_trajectory);
         // (void)output_trajectory;
         traj_map.insert({trajectory_json["name"], std::make_pair(generated_trajectory, output_path)});
+        break;
     }
 }
 
@@ -212,6 +220,14 @@ int main(int argc, char **argv)
 
     node = &n;
 
+    // std::vector<Translation2d> translations = {
+    //     Translation2d(-1, 1),
+    //     Translation2d(1, 1),
+    //     Translation2d(-1, -1),
+    //     Translation2d(1, -1)};
+
+    // ck::team254_swerve::SwerveDriveKinematics kinematics(translations);
+
     register_for_robot_updates(node);
 
     bool required_params_found = true;
@@ -270,6 +286,8 @@ int main(int argc, char **argv)
             Pose2d robot_pose_vel(output.vxMetersPerSecond * 0.01, output.vyMetersPerSecond * 0.01, Rotation2d::fromRadians(output.omegaRadiansPerSecond * 0.01));
             Twist2d twist_vel = Pose2d::log(robot_pose_vel);
             ChassisSpeeds updated_output(twist_vel.dx / 0.01, twist_vel.dy / 0.01, twist_vel.dtheta / 0.01);
+
+            std::cout << "Twist: " << updated_output.omegaRadiansPerSecond << std::endl;
             
             swerve_auto_control.twist.linear.x = updated_output.vxMetersPerSecond;
             swerve_auto_control.twist.linear.y = updated_output.vyMetersPerSecond;
