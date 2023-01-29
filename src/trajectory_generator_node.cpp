@@ -84,7 +84,7 @@ nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2d
         pose.position.x(ck::math::inches_to_meters(trajectory.getState(i).state().getTranslation().x()));
         pose.position.y(ck::math::inches_to_meters(trajectory.getState(i).state().getTranslation().y()));
         pose.orientation.yaw(trajectory.getHeading(i).state().getRadians());
-        
+
         // std::cout << std::setw(5) << std::left << pose.position.x();
         // std::cout << std::setw(5) << std::left << pose.position.y();
         // std::cout << std::setw(5) << std::left << pose.orientation.yaw();
@@ -100,42 +100,6 @@ nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2d
     timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(trajectory);
     TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
 
-    // std::cout << name << std::endl;
-    // std::cout << "Traj len: " << traj_it.trajectory().length() << std::endl;
-    // std::cout << traj_it.getRemainingProgress() << std::endl;
-
-    double totalProg = traj_it.getRemainingProgress();
-
-    // for (double i = 0; i < totalProg; i += 0.01)
-    // {
-    //     int index = (int)std::floor(trajectory.length() * i / totalProg);
-    //     // std::cout << traj_it.getHeading().state().getDegrees() << std::endl;
-    //     // traj_it.advance(0.1);
-    //     // std::cout << traj_it.preview(i).heading().state().getDegrees() << std::endl;
-    //     double desired_heading = traj_it.trajectory().getHeading(index).state().getDegrees();
-    //     double prev_heading = traj_it.trajectory().getHeading(index-1).state().getDegrees();
-    //     double heading_diff = desired_heading - prev_heading;
-    //     // std::cout << index << ": " << desired_heading << std::endl;
-    //     if (heading_diff > 0.001)
-    //     {
-    //         std::cout << index << ": " << heading_diff / 0.03 << std::endl;
-    //     }
-    // }
-
-    for (double i = 0; i < totalProg; i += 0.01)
-    {
-        int index = (int)std::floor(trajectory.length() * i / totalProg);
-        // std::cout << traj_it.getHeading().state().getDegrees() << std::endl;
-        // traj_it.advance(0.1);
-        // std::cout << traj_it.preview(i).heading().state().getDegrees() << std::endl;
-        double desired_heading = traj_it.trajectory().getHeading(index).state().getDegrees();
-        double heading_diff = desired_heading - last_heading;
-        last_heading = desired_heading;
-        // std::cout << index << ": " << desired_heading << std::endl;
-        // std::cout << index << ": " << heading_diff / 0.01 << std::endl;
-        (void)heading_diff;
-    }
-
     return path;
 }
 
@@ -147,7 +111,7 @@ void generate_trajectories(void)
 
     if (!fs::exists(directory_path))
     {
-        ck::log_error << directory_path << " does not exist!" << std::flush; 
+        ck::log_error << directory_path << " does not exist!" << std::flush;
         return;
     }
 
@@ -306,7 +270,7 @@ int main(int argc, char **argv)
             ChassisSpeeds updated_output(twist_vel.dx / 0.01, twist_vel.dy / 0.01, twist_vel.dtheta / 0.01);
 
             // std::cout << "Twist: " << updated_output.omegaRadiansPerSecond << std::endl;
-            
+
             swerve_auto_control.twist.linear.x = updated_output.vxMetersPerSecond;
             swerve_auto_control.twist.linear.y = updated_output.vyMetersPerSecond;
             swerve_auto_control.twist.linear.z = 0.0;
@@ -318,7 +282,7 @@ int main(int argc, char **argv)
             swerve_auto_control.pose.position.x = 0.0;
             swerve_auto_control.pose.position.y = 0.0;
             swerve_auto_control.pose.position.z = 0.0;
-            
+
             tf2::Quaternion heading;
             heading.setRPY(0.0, 0.0, motion_planner.getHeadingSetpoint().state().getRadians());
             heading.normalize();
