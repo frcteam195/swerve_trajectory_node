@@ -106,18 +106,29 @@ nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2d
 
     double totalProg = traj_it.getRemainingProgress();
 
-    double last_heading = 0.0;
+    // for (double i = 0; i < totalProg; i += 0.01)
+    // {
+    //     int index = (int)std::floor(trajectory.length() * i / totalProg);
+    //     // std::cout << traj_it.getHeading().state().getDegrees() << std::endl;
+    //     // traj_it.advance(0.1);
+    //     // std::cout << traj_it.preview(i).heading().state().getDegrees() << std::endl;
+    //     double desired_heading = traj_it.trajectory().getHeading(index).state().getDegrees();
+    //     double prev_heading = traj_it.trajectory().getHeading(index-1).state().getDegrees();
+    //     double heading_diff = desired_heading - prev_heading;
+    //     // std::cout << index << ": " << desired_heading << std::endl;
+    //     if (heading_diff > 0.001)
+    //     {
+    //         std::cout << index << ": " << heading_diff / 0.03 << std::endl;
+    //     }
+    // }
+
     for (double i = 0; i < totalProg; i += 0.01)
     {
-        int index = (int)std::floor(trajectory.length() * i / totalProg);
-        // std::cout << traj_it.getHeading().state().getDegrees() << std::endl;
-        // traj_it.advance(0.1);
-        // std::cout << traj_it.preview(i).heading().state().getDegrees() << std::endl;
-        double desired_heading = traj_it.trajectory().getHeading(index).state().getDegrees();
-        double heading_diff = desired_heading - last_heading;
-        last_heading = desired_heading;
-        // std::cout << index << ": " << desired_heading << std::endl;
-        std::cout << index << ": " << heading_diff / 0.01 << std::endl;
+        // double heading = traj_it.trajectory().getHeading(i).state().getDegrees();
+        // double prev = traj_it.trajectory().getHeading(i-1).state().getDegrees();
+        // std::cout << (heading - prev) / 0.01 << std::endl;
+        std::cout << traj_it.getHeading().state().getDegrees() << std::endl;
+        traj_it.advance(0.01);
     }
 
     return path;
@@ -272,8 +283,10 @@ int main(int argc, char **argv)
 
         if (traj_running)
         {
+            static double traj_start_time = ros::Time::now().toSec();
             if (motion_planner.isDone())
             {
+                std::cout << "TRAJ TIME = " << ros::Time::now().toSec() - traj_start_time << std::endl;
                 traj_running = false;
                 persistHeadingRads = motion_planner.getHeadingSetpoint().state().getRadians();
                 continue;
@@ -287,7 +300,7 @@ int main(int argc, char **argv)
             Twist2d twist_vel = Pose2d::log(robot_pose_vel);
             ChassisSpeeds updated_output(twist_vel.dx / 0.01, twist_vel.dy / 0.01, twist_vel.dtheta / 0.01);
 
-            std::cout << "Twist: " << updated_output.omegaRadiansPerSecond << std::endl;
+            // std::cout << "Twist: " << ck::math::rad2deg(updated_output.omegaRadiansPerSecond) << std::endl;
             
             swerve_auto_control.twist.linear.x = updated_output.vxMetersPerSecond;
             swerve_auto_control.twist.linear.y = updated_output.vyMetersPerSecond;
