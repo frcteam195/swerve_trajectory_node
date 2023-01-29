@@ -95,14 +95,14 @@ nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2d
         path.poses.push_back(pose_stamped);
     }
 
-    std::cout << "\n\n\n";
+    // std::cout << "\n\n\n";
 
     timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(trajectory);
     TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
 
-    std::cout << name << std::endl;
-    std::cout << "Traj len: " << traj_it.trajectory().length() << std::endl;
-    std::cout << traj_it.getRemainingProgress() << std::endl;
+    // std::cout << name << std::endl;
+    // std::cout << "Traj len: " << traj_it.trajectory().length() << std::endl;
+    // std::cout << traj_it.getRemainingProgress() << std::endl;
 
     double totalProg = traj_it.getRemainingProgress();
 
@@ -124,11 +124,16 @@ nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2d
 
     for (double i = 0; i < totalProg; i += 0.01)
     {
-        // double heading = traj_it.trajectory().getHeading(i).state().getDegrees();
-        // double prev = traj_it.trajectory().getHeading(i-1).state().getDegrees();
-        // std::cout << (heading - prev) / 0.01 << std::endl;
-        std::cout << traj_it.getHeading().state().getDegrees() << std::endl;
-        traj_it.advance(0.01);
+        int index = (int)std::floor(trajectory.length() * i / totalProg);
+        // std::cout << traj_it.getHeading().state().getDegrees() << std::endl;
+        // traj_it.advance(0.1);
+        // std::cout << traj_it.preview(i).heading().state().getDegrees() << std::endl;
+        double desired_heading = traj_it.trajectory().getHeading(index).state().getDegrees();
+        double heading_diff = desired_heading - last_heading;
+        last_heading = desired_heading;
+        // std::cout << index << ": " << desired_heading << std::endl;
+        // std::cout << index << ": " << heading_diff / 0.01 << std::endl;
+        (void)heading_diff;
     }
 
     return path;
@@ -300,7 +305,7 @@ int main(int argc, char **argv)
             Twist2d twist_vel = Pose2d::log(robot_pose_vel);
             ChassisSpeeds updated_output(twist_vel.dx / 0.01, twist_vel.dy / 0.01, twist_vel.dtheta / 0.01);
 
-            // std::cout << "Twist: " << ck::math::rad2deg(updated_output.omegaRadiansPerSecond) << std::endl;
+            // std::cout << "Twist: " << updated_output.omegaRadiansPerSecond << std::endl;
             
             swerve_auto_control.twist.linear.x = updated_output.vxMetersPerSecond;
             swerve_auto_control.twist.linear.y = updated_output.vyMetersPerSecond;
