@@ -136,7 +136,6 @@ void generate_trajectories(void)
         nav_msgs::Path output_path = package_trajectory(trajectory_json["name"], generated_trajectory);
         // (void)output_trajectory;
         traj_map.insert({trajectory_json["name"], std::make_pair(generated_trajectory, output_path)});
-        break;
     }
 }
 
