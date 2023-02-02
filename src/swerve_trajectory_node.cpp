@@ -1,6 +1,6 @@
-#include "trajectory_generator_node.hpp"
-#include "trajectory_generator_node/StartTrajectory.h"
-#include "trajectory_generator_node/OutputTrajectory.h"
+#include "swerve_trajectory_node.hpp"
+#include "swerve_trajectory_node/StartTrajectory.h"
+#include "swerve_trajectory_node/OutputTrajectory.h"
 
 #include "ck_ros_msgs_node/Swerve_Drivetrain_Auto_Control.h"
 
@@ -45,13 +45,13 @@ using namespace ck::trajectory;
 using namespace ck::trajectory::timing;
 using namespace ck::planners;
 
-using namespace trajectory_generator_node;
+using namespace swerve_trajectory_node;
 
 ros::NodeHandle *node;
 
 static ros::Publisher *path_publisher;
 
-// std::map<std::string, trajectory_generator_node::OutputTrajectory> traj_map;
+// std::map<std::string, swerve_trajectory_node::OutputTrajectory> traj_map;
 // std::map<std::string, std::pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path> traj_map;
 std::map<std::string, std::pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path>> traj_map;
 
@@ -150,7 +150,7 @@ void robot_odometry_subscriber(const nav_msgs::Odometry &odom)
     current_pose = Pose2d(x, y, Rotation2d::fromRadians(heading));
 }
 
-bool start_trajectory(trajectory_generator_node::StartTrajectory::Request &request, trajectory_generator_node::StartTrajectory::Response &response)
+bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request, swerve_trajectory_node::StartTrajectory::Response &response)
 {
     ck::log_info << "Start trajectory requested!" << std::endl;
     ck::log_info << "Request to start trajectory: " << request.trajectory_name << std::endl;
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
      * You must call one of the versions of ros::init() before using any other
      * part of the ROS system.
      */
-    ros::init(argc, argv, "trajectory_generator_node");
+    ros::init(argc, argv, "swerve_trajectory_node");
 
     ros::NodeHandle n;
 
