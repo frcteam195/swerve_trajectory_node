@@ -270,8 +270,8 @@ int main(int argc, char **argv)
 
             // std::cout << "Twist: " << updated_output.omegaRadiansPerSecond << std::endl;
 
-            swerve_auto_control.twist.linear.x = updated_output.vxMetersPerSecond;
-            swerve_auto_control.twist.linear.y = updated_output.vyMetersPerSecond;
+            swerve_auto_control.twist.linear.x = output.vxMetersPerSecond;//updated_output.vxMetersPerSecond;
+            swerve_auto_control.twist.linear.y = output.vyMetersPerSecond;//updated_output.vyMetersPerSecond;
             swerve_auto_control.twist.linear.z = 0.0;
 
             swerve_auto_control.twist.angular.x = 0.0;
