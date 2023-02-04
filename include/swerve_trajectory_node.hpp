@@ -2,8 +2,8 @@
 
 #include <string>
 
-double max_acceleration;
-double max_velocity;
+double robot_max_fwd_accel;
+double robot_max_fwd_vel;
 double max_voltage;
 
 std::string trajectory_directory;

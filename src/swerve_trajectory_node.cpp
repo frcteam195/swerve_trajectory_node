@@ -55,7 +55,7 @@ static ros::Publisher *path_publisher;
 // std::map<std::string, std::pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path> traj_map;
 std::map<std::string, std::pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path>> traj_map;
 
-DriveMotionPlanner motion_planner;
+DriveMotionPlanner *motion_planner;
 
 std::atomic_bool traj_running{false};
 Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> current_trajectory;
@@ -125,11 +125,11 @@ void generate_trajectories(void)
         std::pair<std::vector<Pose2d>, std::vector<Rotation2d>> path_points = ck::json::parse_json_waypoints(trajectory_json["waypoints"]);
 
         Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> generated_trajectory;
-        generated_trajectory = motion_planner.generateTrajectory(trajectory_json["reversed"],
+        generated_trajectory = motion_planner->generateTrajectory(trajectory_json["reversed"],
                                                                  path_points.first,
                                                                  path_points.second,
-                                                                 max_velocity,
-                                                                 max_acceleration,
+                                                                 robot_max_fwd_vel,
+                                                                 robot_max_fwd_accel,
                                                                  max_voltage);
 
         // Convert the CK trajectory into a ROS path.
@@ -162,8 +162,8 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
         current_trajectory = traj_map.at(request.trajectory_name).first;
         timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(current_trajectory);
         TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
-        motion_planner.reset();
-        motion_planner.setTrajectory(traj_it);
+        motion_planner->reset();
+        motion_planner->setTrajectory(traj_it);
         traj_running = true;
         response.accepted = true;
 
@@ -210,10 +210,11 @@ int main(int argc, char **argv)
     register_for_robot_updates(node);
 
     bool required_params_found = true;
-    required_params_found &= n.getParam(CKSP(max_acceleration), max_acceleration);
-    required_params_found &= n.getParam(CKSP(max_velocity), max_velocity);
+    required_params_found &= n.getParam(CKSP(robot_max_fwd_accel), robot_max_fwd_accel);
+    required_params_found &= n.getParam(CKSP(robot_max_fwd_vel), robot_max_fwd_vel);
     required_params_found &= n.getParam(CKSP(max_voltage), max_voltage);
     required_params_found &= n.getParam(CKSP(trajectory_directory), trajectory_directory);
+
 
     if (!required_params_found)
     {
@@ -222,6 +223,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    motion_planner = new DriveMotionPlanner(robot_max_fwd_vel);
+
+    robot_max_fwd_accel = ck::math::meters_to_inches(robot_max_fwd_accel);
+    robot_max_fwd_vel = ck::math::meters_to_inches(robot_max_fwd_vel);
     // std::cout << "pre sub" << std::endl;
 
     // ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
@@ -244,7 +249,7 @@ int main(int argc, char **argv)
         if (robot_status.get_mode() != RobotMode::AUTONOMOUS && traj_running)
         {
             traj_running = false;
-            motion_planner.reset();
+            motion_planner->reset();
         }
 
         ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control swerve_auto_control;
@@ -252,17 +257,17 @@ int main(int argc, char **argv)
         if (traj_running)
         {
             static double traj_start_time = ros::Time::now().toSec();
-            if (motion_planner.isDone())
+            if (motion_planner->isDone())
             {
                 std::cout << "TRAJ TIME = " << ros::Time::now().toSec() - traj_start_time << std::endl;
                 traj_running = false;
-                persistHeadingRads = motion_planner.getHeadingSetpoint().state().getRadians();
+                persistHeadingRads = motion_planner->getHeadingSetpoint().state().getRadians();
                 continue;
             }
 
             current_timestamp = ros::Time::now().toSec();
 
-            ChassisSpeeds output = motion_planner.update(current_timestamp, current_pose);
+            ChassisSpeeds output = motion_planner->update(current_timestamp, current_pose);
 
             Pose2d robot_pose_vel(output.vxMetersPerSecond * 0.01, output.vyMetersPerSecond * 0.01, Rotation2d::fromRadians(output.omegaRadiansPerSecond * 0.01));
             Twist2d twist_vel = Pose2d::log(robot_pose_vel);
@@ -283,7 +288,7 @@ int main(int argc, char **argv)
             swerve_auto_control.pose.position.z = 0.0;
 
             tf2::Quaternion heading;
-            heading.setRPY(0.0, 0.0, motion_planner.getHeadingSetpoint().state().getRadians());
+            heading.setRPY(0.0, 0.0, motion_planner->getHeadingSetpoint().state().getRadians());
             heading.normalize();
             swerve_auto_control.pose.orientation = tf2::toMsg(heading);
         }
