@@ -1,0 +1,7 @@
+# Inputs
+string trajectory_name
+---
+# Outputs
+float64 x_inches
+float64 y_inches
+float64 heading_degrees

@@ -1,6 +1,9 @@
 #include "swerve_trajectory_node.hpp"
 #include "swerve_trajectory_node/StartTrajectory.h"
 #include "swerve_trajectory_node/OutputTrajectory.h"
+#include "swerve_trajectory_node/GetStartPose.h"
+
+#include "get_odom_msg.hpp"
 
 #include "ck_ros_msgs_node/Swerve_Drivetrain_Auto_Control.h"
 
@@ -50,6 +53,7 @@ using namespace swerve_trajectory_node;
 ros::NodeHandle *node;
 
 static ros::Publisher *path_publisher;
+static ros::Publisher *reset_pose_publisher;
 
 // std::map<std::string, swerve_trajectory_node::OutputTrajectory> traj_map;
 // std::map<std::string, std::pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path> traj_map;
@@ -167,9 +171,15 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
         traj_running = true;
         response.accepted = true;
 
+        double start_x = current_trajectory.getFirstState().state().getTranslation().x();
+        double start_y = current_trajectory.getFirstState().state().getTranslation().y();
+        double start_heading = current_trajectory.getFirstHeading().state().getDegrees();
+
+        reset_pose_publisher->publish(get_odom_msg(start_x, start_y, start_heading));
+
         path_publisher->publish(traj_map.at(request.trajectory_name).second);
     }
-    catch (const std::out_of_range& exception)
+    catch (const std::out_of_range &exception)
     {
         ck::log_info << "it bad" << std::flush;
         ck::log_error << exception.what() << std::flush;
@@ -178,6 +188,31 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
     }
 
     ck::log_info << "Accepted trajectory" << std::flush;
+    return true;
+}
+
+bool get_start_pose(swerve_trajectory_node::GetStartPose::Request &request, swerve_trajectory_node::GetStartPose::Response &response)
+{
+    ck::log_info << "Start pose requested for trajectory: " << request.trajectory_name << std::endl;
+
+    try
+    {
+        auto traj = traj_map.at(request.trajectory_name).first;
+
+        response.x_inches = traj.getFirstState().state().getTranslation().x();
+        response.y_inches = traj.getFirstState().state().getTranslation().y();
+        response.heading_degrees = traj.getFirstHeading().state().getDegrees();
+    }
+    catch (const std::out_of_range &exception)
+    {
+        ck::log_error << "INVALID TRAJECTORY NAME!" << std::endl;
+        ck::log_error << exception.what() << std::endl;
+        response.x_inches = 0.0;
+        response.y_inches = 0.0;
+        response.heading_degrees = 0.0;
+        return false;
+    }
+
     return true;
 }
 
@@ -231,10 +266,13 @@ int main(int argc, char **argv)
 
     // ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
     static ros::ServiceServer service_start = node->advertiseService("start_trajectory", start_trajectory);
+    static ros::ServiceServer service_get_start_pose = node->advertiseService("get_start_pose", get_start_pose);
 	static ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
     static ros::Publisher swerve_auto_control_publisher = node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>("/SwerveAutoControl", 10);
     static ros::Publisher path_publisher_ = node->advertise<nav_msgs::Path>("/CurrentPath", 10, true);
     path_publisher = &path_publisher_;
+    static ros::Publisher reset_pose_publisher_ = node->advertise<nav_msgs::Odometry>("/ResetHeading", 10);
+    reset_pose_publisher = &reset_pose_publisher_;
 
     generate_trajectories();
 
