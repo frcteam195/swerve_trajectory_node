@@ -277,8 +277,8 @@ int main(int argc, char **argv)
 
     generate_trajectories();
 
-    debug_trajectory(traj_map.at("correct_start").first);
-    debug_trajectory_iterator(traj_map.at("correct_start").first, 0.01);
+    // debug_trajectory(traj_map.at("correct_start").first);
+    // debug_trajectory_iterator(traj_map.at("correct_start").first, 0.01);
 
     // Send traj updates on /SwerveAutoControl
     // send Swerve_Drivetrain_Auto_Control
