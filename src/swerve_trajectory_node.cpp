@@ -35,6 +35,7 @@
 #include "nlohmann/json.hpp"
 
 #include "parsers/JsonParser.hpp"
+#include "trajectory_utils.hpp"
 
 #include <map>
 #include <string>
@@ -275,6 +276,9 @@ int main(int argc, char **argv)
     reset_pose_publisher = &reset_pose_publisher_;
 
     generate_trajectories();
+
+    debug_trajectory(traj_map.at("correct_start").first);
+    debug_trajectory_iterator(traj_map.at("correct_start").first, 0.01);
 
     // Send traj updates on /SwerveAutoControl
     // send Swerve_Drivetrain_Auto_Control

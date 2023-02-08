@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ros/ros.h"
 #include "ck_utilities/CKMath.hpp"
 #include "ck_utilities/geometry/geometry_ros_helpers.hpp"
