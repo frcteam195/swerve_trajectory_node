@@ -171,11 +171,11 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
         traj_running = true;
         response.accepted = true;
 
-        double start_x = current_trajectory.getFirstState().state().getTranslation().x();
-        double start_y = current_trajectory.getFirstState().state().getTranslation().y();
-        double start_heading = current_trajectory.getFirstHeading().state().getDegrees();
+        // double start_x = current_trajectory.getFirstState().state().getTranslation().x();
+        // double start_y = current_trajectory.getFirstState().state().getTranslation().y();
+        // double start_heading = current_trajectory.getFirstHeading().state().getDegrees();
 
-        reset_pose_publisher->publish(get_odom_msg(start_x, start_y, start_heading));
+        // reset_pose_publisher->publish(get_odom_msg(start_x, start_y, start_heading));
 
         path_publisher->publish(traj_map.at(request.trajectory_name).second);
     }
