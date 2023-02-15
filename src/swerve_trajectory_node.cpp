@@ -6,6 +6,7 @@
 #include "get_odom_msg.hpp"
 
 #include "ck_ros_msgs_node/Swerve_Drivetrain_Auto_Control.h"
+#include "ck_ros_msgs_node/Trajectory_Status.h"
 
 #include "frc_robot_utilities/frc_robot_utilities.hpp"
 
@@ -55,6 +56,7 @@ ros::NodeHandle *node;
 
 static ros::Publisher *path_publisher;
 static ros::Publisher *reset_pose_publisher;
+static ros::Publisher *status_publisher;
 
 // std::map<std::string, swerve_trajectory_node::OutputTrajectory> traj_map;
 // std::map<std::string, std::pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path> traj_map;
@@ -68,6 +70,7 @@ TimedView<Pose2dWithCurvature, Rotation2d> timed_view;
 Pose2d current_pose;
 double current_timestamp = 0.0;
 double persistHeadingRads = 0.0;
+std::string active_trajectory_name = "";
 
 nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> trajectory)
 {
@@ -179,6 +182,7 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
         // reset_pose_publisher->publish(get_odom_msg(start_x, start_y, start_heading));
 
         path_publisher->publish(traj_map.at(request.trajectory_name).second);
+        active_trajectory_name = request.trajectory_name;
     }
     catch (const std::out_of_range &exception)
     {
@@ -274,6 +278,8 @@ int main(int argc, char **argv)
     path_publisher = &path_publisher_;
     static ros::Publisher reset_pose_publisher_ = node->advertise<nav_msgs::Odometry>("/ResetHeading", 10);
     reset_pose_publisher = &reset_pose_publisher_;
+    static ros::Publisher status_publisher_ = node->advertise<ck_ros_msgs_node::Trajectory_Status>("/TrajectoryStatus", 10);
+    status_publisher = &status_publisher_;
 
     generate_trajectories();
 
@@ -286,6 +292,7 @@ int main(int argc, char **argv)
     ros::Rate rate(100);
     while (ros::ok())
     {
+        ck_ros_msgs_node::Trajectory_Status trajectory_status;
         ros::spinOnce();
 
         if (robot_status.get_mode() != RobotMode::AUTONOMOUS && traj_running)
@@ -298,9 +305,12 @@ int main(int argc, char **argv)
 
         if (traj_running)
         {
+            trajectory_status.is_running = true;
+            trajectory_status.trajectory_name = active_trajectory_name;
             static double traj_start_time = ros::Time::now().toSec();
             if (motion_planner->isDone())
             {
+                trajectory_status.is_completed = true;
                 std::cout << "TRAJ TIME = " << ros::Time::now().toSec() - traj_start_time << std::endl;
                 traj_running = false;
                 persistHeadingRads = motion_planner->getHeadingSetpoint().state().getRadians();
@@ -346,7 +356,7 @@ int main(int argc, char **argv)
         }
 
         swerve_auto_control_publisher.publish(swerve_auto_control);
-
+        status_publisher->publish(trajectory_status);
         rate.sleep();
     }
 
