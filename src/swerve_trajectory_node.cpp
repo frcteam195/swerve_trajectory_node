@@ -72,6 +72,8 @@ double current_timestamp = 0.0;
 double persistHeadingRads = 0.0;
 std::string active_trajectory_name = "";
 
+ck_ros_msgs_node::Trajectory_Status trajectory_status;
+
 nav_msgs::Path package_trajectory(std::string name, Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> trajectory)
 {
     (void)name;
@@ -175,6 +177,8 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
         traj_running = true;
         response.accepted = true;
 
+        trajectory_status.is_running = true;
+        trajectory_status.is_completed = false;
         // double start_x = current_trajectory.getFirstState().state().getTranslation().x();
         // double start_y = current_trajectory.getFirstState().state().getTranslation().y();
         // double start_heading = current_trajectory.getFirstHeading().state().getDegrees();
@@ -292,7 +296,6 @@ int main(int argc, char **argv)
     ros::Rate rate(100);
     while (ros::ok())
     {
-        ck_ros_msgs_node::Trajectory_Status trajectory_status;
         ros::spinOnce();
 
         if (robot_status.get_mode() != RobotMode::AUTONOMOUS && traj_running)
@@ -303,9 +306,10 @@ int main(int argc, char **argv)
 
         ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control swerve_auto_control;
 
+        trajectory_status.is_running = traj_running;
+
         if (traj_running)
         {
-            trajectory_status.is_running = true;
             trajectory_status.trajectory_name = active_trajectory_name;
             static double traj_start_time = ros::Time::now().toSec();
             if (motion_planner->isDone())
@@ -343,6 +347,8 @@ int main(int argc, char **argv)
             heading.setRPY(0.0, 0.0, motion_planner->getHeadingSetpoint().state().getRadians());
             heading.normalize();
             swerve_auto_control.pose.orientation = tf2::toMsg(heading);
+
+            trajectory_status.progress = motion_planner->getCurrentProgress();
         }
         else
         {
