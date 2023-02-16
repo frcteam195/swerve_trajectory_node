@@ -1,5 +1,10 @@
 #include "parsers/JsonParser.hpp"
 
+using std::vector;
+using std::pair;
+using ck::team254_geometry::Pose2d;
+using ck::team254_geometry::Rotation2d;
+
 namespace ck
 {
     namespace json
@@ -20,6 +25,17 @@ namespace ck
             return output;
         }
 
+        vector<pair<vector<Pose2d>, vector<Rotation2d>>> parse_json_paths(nlohmann::json json_paths)
+        {
+            vector<pair<vector<Pose2d>, vector<Rotation2d>>> output_paths;
+
+            for (auto json_path : json_paths)
+            {
+                output_paths.push_back(parse_json_waypoints(json_path["waypoints"]));
+            }
+
+            return output_paths;
+        }
     } // namespace json
 
 } // namespace ck

@@ -11,6 +11,7 @@ namespace ck
     namespace json
     {
         std::pair<std::vector<team254_geometry::Pose2d>, std::vector<team254_geometry::Rotation2d>> parse_json_waypoints(nlohmann::json json_waypoints);
+        std::vector<std::pair<std::vector<team254_geometry::Pose2d>, std::vector<team254_geometry::Rotation2d>>> parse_json_paths(nlohmann::json json_paths);
     } // namespace json
 
 } // namespace ck
