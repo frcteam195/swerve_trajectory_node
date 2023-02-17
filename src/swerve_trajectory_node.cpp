@@ -195,6 +195,7 @@ bool get_autonomous_info(swerve_trajectory_node::GetAutonomousInfo::Request &req
     {
         ck::log_error << e.what() << std::endl;
         std::cerr << e.what() << '\n';
+        response.valid = false;
         response.number_of_trajectories = -1;
         response.x_inches = -1;
         response.y_inches = -1;
@@ -203,6 +204,7 @@ bool get_autonomous_info(swerve_trajectory_node::GetAutonomousInfo::Request &req
         return false;
     }
 
+    response.valid = true;
     return true;
 }
 
