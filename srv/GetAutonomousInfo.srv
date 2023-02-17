@@ -1,0 +1,8 @@
+# Inputs
+string autonomous_name
+---
+# Outputs
+int32 number_of_trajectories
+float64 x_inches
+float64 y_inches
+float64 heading_degrees

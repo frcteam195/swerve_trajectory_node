@@ -1,5 +1,6 @@
 # Inputs
-string trajectory_name
+string autonomous_name
+int32 trajectory_index
 ---
 # Outputs
 bool accepted
