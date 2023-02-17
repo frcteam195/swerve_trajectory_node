@@ -1,7 +1,6 @@
 #include "swerve_trajectory_node.hpp"
 #include "swerve_trajectory_node/StartTrajectory.h"
 #include "swerve_trajectory_node/OutputTrajectory.h"
-#include "swerve_trajectory_node/GetStartPose.h"
 #include "swerve_trajectory_node/GetAutonomousInfo.h"
 
 #include "get_odom_msg.hpp"
@@ -253,31 +252,6 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
     return true;
 }
 
-bool get_start_pose(swerve_trajectory_node::GetStartPose::Request &request, swerve_trajectory_node::GetStartPose::Response &response)
-{
-    ck::log_info << "Start pose requested for trajectory: " << request.trajectory_name << std::endl;
-
-    try
-    {
-        auto traj = traj_map.at(request.trajectory_name).at(0).first;
-
-        response.x_inches = traj.getFirstState().state().getTranslation().x();
-        response.y_inches = traj.getFirstState().state().getTranslation().y();
-        response.heading_degrees = traj.getFirstHeading().state().getDegrees();
-    }
-    catch (const std::out_of_range &exception)
-    {
-        ck::log_error << "INVALID TRAJECTORY NAME!" << std::endl;
-        ck::log_error << exception.what() << std::endl;
-        response.x_inches = 0.0;
-        response.y_inches = 0.0;
-        response.heading_degrees = 0.0;
-        return false;
-    }
-
-    return true;
-}
-
 int main(int argc, char **argv)
 {
     /**
@@ -328,7 +302,6 @@ int main(int argc, char **argv)
 
     // ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
     static ros::ServiceServer service_start = node->advertiseService("start_trajectory", start_trajectory);
-    static ros::ServiceServer service_get_start_pose = node->advertiseService("get_start_pose", get_start_pose);
     static ros::ServiceServer service_get_autonomous_info = node->advertiseService("get_autonomous_info", get_autonomous_info);
 	static ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
     static ros::Publisher swerve_auto_control_publisher = node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>("/SwerveAutoControl", 10);
