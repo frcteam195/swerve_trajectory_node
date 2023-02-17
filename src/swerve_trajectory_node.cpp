@@ -137,17 +137,10 @@ void generate_trajectories(void)
 
         std::string auto_name = trajectory_json["name"];
 
-        // auto test = ck::json::parse_json_paths(trajectory_json["paths"]);
-
-        // for (auto path : test)
-        // {
-        //     for (size_t i = 0; i < path.first.size(); i++)
-        //     {
-        //         std::cout << path.first.at(i).to_string() << std::endl;
-        //     }
-        
-        //     std::cout << std::endl;
-        // }
+        if (!trajectory_json.contains("paths"))
+        {
+            continue;
+        }
 
         vector<pair<vector<Pose2d>, vector<Rotation2d>>> paths = ck::json::parse_json_paths(trajectory_json["paths"]);
 
@@ -169,21 +162,6 @@ void generate_trajectories(void)
         }
 
         traj_map.insert({auto_name, traj_paths});
-
-        // std::pair<std::vector<Pose2d>, std::vector<Rotation2d>> path_points = ck::json::parse_json_waypoints(trajectory_json["waypoints"]);
-
-        // Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> generated_trajectory;
-        // generated_trajectory = motion_planner->generateTrajectory(trajectory_json["reversed"],
-        //                                                          path_points.first,
-        //                                                          path_points.second,
-        //                                                          robot_max_fwd_vel,
-        //                                                          robot_max_fwd_accel,
-        //                                                          max_voltage);
-
-        // // Convert the CK trajectory into a ROS path.
-        // nav_msgs::Path output_path = package_trajectory(trajectory_json["name"], generated_trajectory);
-        // // (void)output_trajectory;
-        // traj_map.insert({trajectory_json["name"], std::make_pair(generated_trajectory, output_path)});
     }
 }
 
