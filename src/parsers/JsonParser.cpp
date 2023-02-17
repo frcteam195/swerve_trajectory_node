@@ -15,7 +15,7 @@ namespace ck
 
             for (auto json_waypoint : json_waypoints)
             {
-                Rotation2d track = Rotation2d::fromDegrees(json_waypoint["track"]);
+                Rotation2d track = Rotation2d::fromDegrees(json_waypoint["theta"]);
                 Pose2d waypoint(json_waypoint["x"], json_waypoint["y"], track);
                 Rotation2d heading = Rotation2d::fromDegrees(json_waypoint["heading"]);
                 output.first.push_back(waypoint);
