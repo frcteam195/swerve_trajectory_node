@@ -177,8 +177,13 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
         traj_running = true;
         response.accepted = true;
 
+        trajectory_status.trajectory_name = request.trajectory_name;
         trajectory_status.is_running = true;
         trajectory_status.is_completed = false;
+        trajectory_status.progress = 0.0;
+
+        status_publisher->publish(trajectory_status);
+
         // double start_x = current_trajectory.getFirstState().state().getTranslation().x();
         // double start_y = current_trajectory.getFirstState().state().getTranslation().y();
         // double start_heading = current_trajectory.getFirstHeading().state().getDegrees();
