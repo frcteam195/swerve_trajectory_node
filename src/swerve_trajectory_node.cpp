@@ -138,6 +138,7 @@ void generate_trajectories(void)
 
         if (!trajectory_json.contains("paths"))
         {
+            ck::log_warn << "Invalid trajectory - skipping." << std::endl;
             continue;
         }
 
