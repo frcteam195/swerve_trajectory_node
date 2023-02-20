@@ -228,6 +228,7 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
         trajectory_status.trajectory_name = request.autonomous_name;
         trajectory_status.is_running = true;
         trajectory_status.is_completed = false;
+        trajectory_status.trajectory_index = request.trajectory_index;
         trajectory_status.progress = 0.0;
 
         status_publisher->publish(trajectory_status);
