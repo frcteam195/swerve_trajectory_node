@@ -56,6 +56,7 @@ add_service_files(
   FILES
   GetAutonomousInfo.srv
   StartTrajectory.srv
+  StopTrajectory.srv
 )
 
 ## Generate actions in the 'action' folder

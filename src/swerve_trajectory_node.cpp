@@ -1,5 +1,6 @@
 #include "swerve_trajectory_node.hpp"
 #include "swerve_trajectory_node/StartTrajectory.h"
+#include "swerve_trajectory_node/StopTrajectory.h"
 #include "swerve_trajectory_node/OutputTrajectory.h"
 #include "swerve_trajectory_node/GetAutonomousInfo.h"
 
@@ -208,6 +209,34 @@ bool get_autonomous_info(swerve_trajectory_node::GetAutonomousInfo::Request &req
     return true;
 }
 
+bool stop_trajectory(swerve_trajectory_node::StopTrajectory::Request &request, swerve_trajectory_node::StopTrajectory::Response &response)
+{
+    (void)request;
+    try
+    {
+        traj_running = false;
+        motion_planner->reset();
+
+        //TODO: Not sure what we should do on force stop or if we should publish this
+        trajectory_status.trajectory_name = "";
+        trajectory_status.is_running = false;
+        trajectory_status.is_completed = false;
+        trajectory_status.trajectory_index = 0;
+        trajectory_status.progress = 0.0;
+
+        status_publisher->publish(trajectory_status);
+
+        response.accepted = true;
+    }
+    catch (const std::exception& e)
+    {
+        ck::log_error << e.what() << std::endl;
+        response.accepted = false;
+        return false;
+    }
+    return true;
+}
+
 bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request, swerve_trajectory_node::StartTrajectory::Response &response)
 {
     ck::log_info << "Start trajectory requested!" << std::endl;
@@ -305,6 +334,7 @@ int main(int argc, char **argv)
     // ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
     static ros::ServiceServer service_start = node->advertiseService("start_trajectory", start_trajectory);
     static ros::ServiceServer service_get_autonomous_info = node->advertiseService("get_autonomous_info", get_autonomous_info);
+    static ros::ServiceServer service_stop = node->advertiseService("stop_trajectory", start_trajectory);
 	static ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
     static ros::Publisher swerve_auto_control_publisher = node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>("/SwerveAutoControl", 10);
     static ros::Publisher path_publisher_ = node->advertise<nav_msgs::Path>("/CurrentPath", 10, true);
