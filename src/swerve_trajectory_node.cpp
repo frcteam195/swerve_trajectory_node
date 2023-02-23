@@ -3,6 +3,7 @@
 #include "swerve_trajectory_node/StopTrajectory.h"
 #include "swerve_trajectory_node/OutputTrajectory.h"
 #include "swerve_trajectory_node/GetAutonomousInfo.h"
+#include "swerve_trajectory_node/ResetPoseWithConfirmation.h"
 
 #include "get_odom_msg.hpp"
 
@@ -209,6 +210,66 @@ bool get_autonomous_info(swerve_trajectory_node::GetAutonomousInfo::Request &req
     return true;
 }
 
+bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfirmation::Request &request, swerve_trajectory_node::ResetPoseWithConfirmation::Response &response)
+{
+    static std::atomic_bool reset_pose_service_running = false;
+    if (!reset_pose_service_running)
+    {
+        try
+        {
+            reset_pose_service_running = true;
+            bool success = reset_robot_pose(robot_status.get_alliance(), request.x_inches, request.y_inches, request.heading_degrees);
+
+            if (!success)
+            {
+                reset_pose_service_running = false;
+                return false;
+            }
+
+            ros::Time start_time = ros::Time::now();
+            double timeout_s = 0.25;
+            double elapsed_time_s;
+            double heading_rad = ck::math::deg2rad(request.heading_degrees);
+            if (robot_status.get_alliance() == Alliance::BLUE)
+            {
+                heading_rad += M_PI;
+            }
+            bool reset_still_running = true;
+            Pose2d requested_pose(request.x_inches, request.y_inches, Rotation2d::fromRadians(heading_rad));
+            do {
+                ros::spinOnce();
+                if (current_pose.epsilonEquals(requested_pose, 1))
+                {
+                    reset_still_running = false;
+                }
+                elapsed_time_s = (ros::Time::now() - start_time).toSec();
+            } while(reset_still_running && elapsed_time_s < timeout_s);
+
+            if (elapsed_time_s > timeout_s)
+            {
+                response.completed = false;
+            }
+            else
+            {
+                response.completed = true;
+            }
+        }
+        catch (const std::exception& e)
+        {
+            ck::log_error << e.what() << std::endl;
+            response.completed = false;
+            reset_pose_service_running = false;
+            return false;
+        }
+        reset_pose_service_running = false;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 bool stop_trajectory(swerve_trajectory_node::StopTrajectory::Request &request, swerve_trajectory_node::StopTrajectory::Response &response)
 {
     (void)request;
@@ -335,6 +396,7 @@ int main(int argc, char **argv)
     static ros::ServiceServer service_start = node->advertiseService("start_trajectory", start_trajectory);
     static ros::ServiceServer service_get_autonomous_info = node->advertiseService("get_autonomous_info", get_autonomous_info);
     static ros::ServiceServer service_stop = node->advertiseService("stop_trajectory", start_trajectory);
+    static ros::ServiceServer reset_pose_confirmation = node->advertiseService("reset_pose_with_confirmation", reset_pose_confirmation_service);
 	static ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
     static ros::Publisher swerve_auto_control_publisher = node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>("/SwerveAutoControl", 10);
     static ros::Publisher path_publisher_ = node->advertise<nav_msgs::Path>("/CurrentPath", 10, true);

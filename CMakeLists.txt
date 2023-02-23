@@ -55,6 +55,7 @@ add_message_files(
 add_service_files(
   FILES
   GetAutonomousInfo.srv
+  ResetPoseWithConfirmation.srv
   StartTrajectory.srv
   StopTrajectory.srv
 )

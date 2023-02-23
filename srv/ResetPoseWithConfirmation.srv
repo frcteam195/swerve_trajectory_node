@@ -1,0 +1,7 @@
+# Inputs
+float64 x_inches
+float64 y_inches
+float64 heading_degrees
+---
+# Outputs
+bool completed
