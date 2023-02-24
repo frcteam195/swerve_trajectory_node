@@ -238,7 +238,7 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
             Pose2d requested_pose(request.x_inches, request.y_inches, Rotation2d::fromRadians(heading_rad));
             do {
                 ros::spinOnce();
-                if (current_pose.epsilonEquals(requested_pose, 1))
+                if (current_pose.epsilonAllEquals(requested_pose, 1))
                 {
                     reset_still_running = false;
                 }
@@ -247,6 +247,7 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
 
             if (elapsed_time_s > timeout_s)
             {
+                ROS_ERROR("Timeout occurred during pose reset!");
                 response.completed = false;
             }
             else
