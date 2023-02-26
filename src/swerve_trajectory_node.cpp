@@ -378,7 +378,9 @@ int main(int argc, char **argv)
     required_params_found &= n.getParam(CKSP(robot_max_fwd_vel), robot_max_fwd_vel);
     required_params_found &= n.getParam(CKSP(max_voltage), max_voltage);
     required_params_found &= n.getParam(CKSP(trajectory_directory), trajectory_directory);
+    required_params_found &= n.getParam(CKSP(robot_max_fwd_vel_mult), robot_max_fwd_vel_mult);
 
+    robot_max_fwd_vel *= robot_max_fwd_vel_mult;
 
     if (!required_params_found)
     {
