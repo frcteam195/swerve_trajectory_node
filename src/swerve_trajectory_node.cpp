@@ -273,6 +273,7 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
             double timeout_s = 0.25;
             double elapsed_time_s;
             double heading_rad = ck::math::deg2rad(request.heading_degrees);
+            persistHeadingRads = heading_rad;
             // if (robot_status.get_alliance() == Alliance::BLUE)
             // {
             //     heading_rad += M_PI;
