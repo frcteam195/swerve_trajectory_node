@@ -57,6 +57,9 @@ using namespace ck::planners;
 
 using namespace swerve_trajectory_node;
 
+typedef Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> AutoTrajectory;
+typedef pair<AutoTrajectory, AutoTrajectory> RedBlueTrajectories;
+
 ros::NodeHandle *node;
 
 static ros::Publisher *path_publisher;
@@ -66,7 +69,8 @@ static ros::Publisher *status_publisher;
 // std::map<std::string, swerve_trajectory_node::OutputTrajectory> traj_map;
 // std::map<std::string, std::pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path> traj_map;
 // std::map<std::string, pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path>> traj_map;
-std::map<std::string, vector<pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path>>> traj_map;
+// std::map<std::string, vector<pair<AutoTrajectory, nav_msgs::Path>>> traj_map;
+std::map<std::string, std::vector<TrajectorySet>> traj_map;
 
 DriveMotionPlanner *motion_planner;
 
@@ -111,8 +115,8 @@ nav_msgs::Path package_trajectory(Trajectory<TimedState<Pose2dWithCurvature>, Ti
 
     // std::cout << "\n\n\n";
 
-    timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(trajectory);
-    TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
+    // timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(trajectory);
+    // TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
 
     return path;
 }
@@ -140,30 +144,59 @@ void generate_trajectories(void)
 
         if (!trajectory_json.contains("paths"))
         {
-            ck::log_warn << "Invalid trajectory - skipping." << std::endl;
+            ck::log_warn << auto_name << " - Invalid trajectory - skipping." << std::endl;
             continue;
         }
 
-        vector<pair<vector<Pose2d>, vector<Rotation2d>>> paths = ck::json::parse_json_paths(trajectory_json["paths"]);
+        vector<PathWaypoints> red_paths = ck::json::parse_json_paths(trajectory_json["paths"]);
+        vector<PathWaypoints> blue_paths = mirror_paths(red_paths);
+
+        std::cout << auto_name << std::endl;
+
+        PathWaypoints red_path = red_paths.at(0);
+        PathWaypoints blue_path = blue_paths.at(0);
+
+        // break;
 
         vector<pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path>> traj_paths;
+        vector<TrajectorySet> traj_sets;
 
-        for (auto path : paths)
+        for (size_t i = 0; i < red_paths.size(); i++)
         {
-            Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> generated_trajectory;
-            generated_trajectory = motion_planner->generateTrajectory(false,
-                                                                      path.first,
-                                                                      path.second,
-                                                                      robot_max_fwd_vel,
-                                                                      robot_max_fwd_accel,
-                                                                      max_voltage);
+            TrajectorySet traj_set;
+            traj_set.red_trajectory = motion_planner->generateTrajectory(false,
+                                                                         red_paths.at(i).waypoints,
+                                                                         red_paths.at(i).headings,
+                                                                         robot_max_fwd_vel,
+                                                                         robot_max_fwd_accel,
+                                                                         max_voltage);
+            
+            traj_set.red_path = package_trajectory(traj_set.red_trajectory);
+            
+            traj_set.blue_trajectory = motion_planner->generateTrajectory(false,
+                                                                         blue_paths.at(i).waypoints,
+                                                                         blue_paths.at(i).headings,
+                                                                         robot_max_fwd_vel,
+                                                                         robot_max_fwd_accel,
+                                                                         max_voltage);
 
-            nav_msgs::Path output_path = package_trajectory(generated_trajectory);
+            traj_set.blue_path = package_trajectory(traj_set.blue_trajectory);
 
-            traj_paths.push_back(std::make_pair(generated_trajectory, output_path));
+            traj_sets.push_back(traj_set);
+            // Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> generated_trajectory;
+            // generated_trajectory = motion_planner->generateTrajectory(false,
+            //                                                           path.waypoints,
+            //                                                           path.headings,
+            //                                                           robot_max_fwd_vel,
+            //                                                           robot_max_fwd_accel,
+            //                                                           max_voltage);
+
+            // nav_msgs::Path output_path = package_trajectory(generated_trajectory);
+
+            // traj_paths.push_back(std::make_pair(generated_trajectory, output_path));
         }
 
-        traj_map.insert({auto_name, traj_paths});
+        traj_map.insert({auto_name, traj_sets});
     }
 }
 
@@ -187,11 +220,18 @@ bool get_autonomous_info(swerve_trajectory_node::GetAutonomousInfo::Request &req
         auto traj_list = traj_map.at(request.autonomous_name);
         response.number_of_trajectories = (int)traj_list.size();
 
-        auto traj = traj_list.at(0).first;
+        auto traj = traj_list.at(0).red_trajectory;
+
+        if (robot_status.get_alliance() == Alliance::BLUE)
+        {
+            traj = traj_list.at(0).blue_trajectory;
+        }
 
         response.x_inches = traj.getFirstState().state().getTranslation().x();
         response.y_inches = traj.getFirstState().state().getTranslation().y();
         response.heading_degrees = traj.getFirstHeading().state().getDegrees();
+
+        std::cout << response.x_inches << ", " << response.y_inches << ", " << response.heading_degrees << std::endl;
     }
     catch(const std::out_of_range& e)
     {
@@ -218,7 +258,10 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
         try
         {
             reset_pose_service_running = true;
-            bool success = reset_robot_pose(robot_status.get_alliance(), request.x_inches, request.y_inches, request.heading_degrees);
+            // Always reset to red, the heading flip is handled by the trajectory itself
+            bool success = reset_robot_pose(Alliance::RED, request.x_inches, request.y_inches, request.heading_degrees);
+
+            std::cout << "Requested heading: " << request.heading_degrees << std::endl;
 
             if (!success)
             {
@@ -230,10 +273,10 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
             double timeout_s = 0.25;
             double elapsed_time_s;
             double heading_rad = ck::math::deg2rad(request.heading_degrees);
-            if (robot_status.get_alliance() == Alliance::BLUE)
-            {
-                heading_rad += M_PI;
-            }
+            // if (robot_status.get_alliance() == Alliance::BLUE)
+            // {
+            //     heading_rad += M_PI;
+            // }
             bool reset_still_running = true;
             Pose2d requested_pose(request.x_inches, request.y_inches, Rotation2d::fromRadians(heading_rad));
             do {
@@ -308,7 +351,16 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
 
     try
     {
-        current_trajectory = traj_map.at(request.autonomous_name).at(request.trajectory_index).first;
+        current_trajectory = traj_map.at(request.autonomous_name).at(request.trajectory_index).red_trajectory;
+        nav_msgs::Path path = traj_map.at(request.autonomous_name).at(request.trajectory_index).red_path;
+
+        if (robot_status.get_alliance() == Alliance::BLUE)
+        {
+            std::cout << "is blue" << std::endl;
+            current_trajectory = traj_map.at(request.autonomous_name).at(request.trajectory_index).blue_trajectory;
+            path = traj_map.at(request.autonomous_name).at(request.trajectory_index).blue_path;
+        }
+
         timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(current_trajectory);
         TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
         motion_planner->reset();
@@ -330,7 +382,7 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
 
         // reset_pose_publisher->publish(get_odom_msg(start_x, start_y, start_heading));
 
-        path_publisher->publish(traj_map.at(request.autonomous_name).at(request.trajectory_index).second);
+        path_publisher->publish(path);
         active_trajectory_name = request.autonomous_name;
     }
     catch (const std::out_of_range &exception)
