@@ -493,6 +493,14 @@ int main(int argc, char **argv)
                 std::cout << "TRAJ TIME = " << ros::Time::now().toSec() - traj_start_time << std::endl;
                 traj_running = false;
                 persistHeadingRads = motion_planner->getHeadingSetpoint().state().getRadians();
+                geometry::Twist blank_twist;
+                geometry::Pose blank_pose;
+                blank_pose.orientation.yaw(persistHeadingRads);
+
+                // blank_pose.orientation.yaw(ck::math::PI / 2.0);
+                swerve_auto_control.twist = geometry::to_msg(blank_twist);
+                swerve_auto_control.pose = geometry::to_msg(blank_pose);
+                swerve_auto_control_publisher.publish(swerve_auto_control);
                 continue;
             }
 
@@ -524,19 +532,20 @@ int main(int argc, char **argv)
             swerve_auto_control.pose.orientation = tf2::toMsg(heading);
 
             trajectory_status.progress = motion_planner->getCurrentProgress();
+            swerve_auto_control_publisher.publish(swerve_auto_control);
         }
-        else
-        {
-            geometry::Twist blank_twist;
-            geometry::Pose blank_pose;
-            blank_pose.orientation.yaw(persistHeadingRads);
+        // else
+        // {
+        //     geometry::Twist blank_twist;
+        //     geometry::Pose blank_pose;
+        //     blank_pose.orientation.yaw(persistHeadingRads);
 
-            // blank_pose.orientation.yaw(ck::math::PI / 2.0);
-            swerve_auto_control.twist = geometry::to_msg(blank_twist);
-            swerve_auto_control.pose = geometry::to_msg(blank_pose);
-        }
+        //     // blank_pose.orientation.yaw(ck::math::PI / 2.0);
+        //     swerve_auto_control.twist = geometry::to_msg(blank_twist);
+        //     swerve_auto_control.pose = geometry::to_msg(blank_pose);
+        // }
 
-        swerve_auto_control_publisher.publish(swerve_auto_control);
+        // swerve_auto_control_publisher.publish(swerve_auto_control);
         status_publisher->publish(trajectory_status);
         rate.sleep();
     }
