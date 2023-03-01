@@ -7,10 +7,11 @@ using ck::team254_geometry::Rotation2d;
 
 namespace ck::json
 {
-    PathWaypoints parse_json_waypoints(nlohmann::json json_waypoints)
+    PathStruct parse_json_waypoints(nlohmann::json json_waypoints)
     {
         // pair<vector<Pose2d>, vector<Rotation2d>> output;
-        PathWaypoints output;
+        PathStruct output;
+        output.max_velocity_in_per_sec = -1;
 
         for (auto json_waypoint : json_waypoints)
         {
@@ -24,13 +25,20 @@ namespace ck::json
         return output;
     }
 
-    vector<PathWaypoints> parse_json_paths(nlohmann::json json_paths)
+    vector<PathStruct> parse_json_paths(nlohmann::json json_paths)
     {
-        vector<PathWaypoints> output_paths;
+        vector<PathStruct> output_paths;
 
         for (auto json_path : json_paths)
         {
-            output_paths.push_back(parse_json_waypoints(json_path["waypoints"]));
+            PathStruct path = parse_json_waypoints(json_path["waypoints"]);
+
+            if (json_path.contains("max_velocity"))
+            {
+                path.max_velocity_in_per_sec = json_path["max_velocity"];
+            }
+
+            output_paths.push_back(path);
         }
 
         return output_paths;

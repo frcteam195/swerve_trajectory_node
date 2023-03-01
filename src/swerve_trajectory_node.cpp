@@ -148,13 +148,13 @@ void generate_trajectories(void)
             continue;
         }
 
-        vector<PathWaypoints> red_paths = ck::json::parse_json_paths(trajectory_json["paths"]);
-        vector<PathWaypoints> blue_paths = mirror_paths(red_paths);
+        vector<PathStruct> red_paths = ck::json::parse_json_paths(trajectory_json["paths"]);
+        vector<PathStruct> blue_paths = mirror_paths(red_paths);
 
         std::cout << auto_name << std::endl;
 
-        PathWaypoints red_path = red_paths.at(0);
-        PathWaypoints blue_path = blue_paths.at(0);
+        PathStruct red_path = red_paths.at(0);
+        PathStruct blue_path = blue_paths.at(0);
 
         // break;
 
@@ -163,11 +163,19 @@ void generate_trajectories(void)
 
         for (size_t i = 0; i < red_paths.size(); i++)
         {
+            double max_speed = robot_max_fwd_vel;
+
+            double path_desired_speed = red_paths.at(i).max_velocity_in_per_sec;
+            if (path_desired_speed > 0 && path_desired_speed < robot_max_fwd_vel)
+            {
+                max_speed = red_paths.at(i).max_velocity_in_per_sec;
+            }
+
             TrajectorySet traj_set;
             traj_set.red_trajectory = motion_planner->generateTrajectory(false,
                                                                          red_paths.at(i).waypoints,
                                                                          red_paths.at(i).headings,
-                                                                         robot_max_fwd_vel,
+                                                                         max_speed,
                                                                          robot_max_fwd_accel,
                                                                          max_voltage);
             
@@ -176,7 +184,7 @@ void generate_trajectories(void)
             traj_set.blue_trajectory = motion_planner->generateTrajectory(false,
                                                                          blue_paths.at(i).waypoints,
                                                                          blue_paths.at(i).headings,
-                                                                         robot_max_fwd_vel,
+                                                                         max_speed,
                                                                          robot_max_fwd_accel,
                                                                          max_voltage);
 

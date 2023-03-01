@@ -1,11 +1,13 @@
 #include "trajectory_utils.hpp"
 
-std::vector<PathWaypoints> mirror_paths(std::vector<PathWaypoints> paths)
+std::vector<PathStruct> mirror_paths(std::vector<PathStruct> paths)
 {
-    std::vector<PathWaypoints> mirror(paths.size());
+    std::vector<PathStruct> mirror(paths.size());
 
     for (size_t i = 0; i < paths.size(); i++)
     {
+        mirror.at(i).max_velocity_in_per_sec = paths.at(i).max_velocity_in_per_sec;
+
         for (size_t j = 0; j < paths.at(i).waypoints.size(); j++)
         {
             double x = paths.at(i).waypoints.at(j).getTranslation().x();
@@ -56,7 +58,7 @@ void debug_trajectory_iterator(Trajectory<TimedState<Pose2dWithCurvature>, Timed
     const double totalProg = traj_it.getRemainingProgress();
 
     std::cout << "----------TRAJECTORY ITERATOR----------" << std::endl;
-    std::cout << "X (in.),Y (in.),Heading (deg.)" << std::endl;
+    std::cout << "X (in.),Y (in.),Heading (deg.), Velocity (in./s)" << std::endl;
 
     for (double i = 0.0; i < totalProg; i += timestep)
     {
@@ -64,8 +66,9 @@ void debug_trajectory_iterator(Trajectory<TimedState<Pose2dWithCurvature>, Timed
         double x = sample_point.state().state().getTranslation().x();
         double y = sample_point.state().state().getTranslation().y();
         double heading = sample_point.heading().state().getDegrees();
+        double velocity = sample_point.state().velocity();
 
-        std::cout << x << "," << y << "," << heading << std::endl;
+        std::cout << x << "," << y << "," << heading << "," << velocity << std::endl;
     }
 
     std::cout << "---------------------------------------" << std::endl;
