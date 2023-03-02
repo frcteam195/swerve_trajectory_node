@@ -152,7 +152,7 @@ void generate_trajectories(void)
         vector<PathStruct> red_paths = ck::json::parse_json_paths(trajectory_json["paths"]);
         vector<PathStruct> blue_paths = mirror_paths(red_paths);
 
-        std::cout << auto_name << std::endl;
+        ck::log_info << auto_name << std::endl;
 
         PathStruct red_path = red_paths.at(0);
         PathStruct blue_path = blue_paths.at(0);
@@ -240,7 +240,7 @@ bool get_autonomous_info(swerve_trajectory_node::GetAutonomousInfo::Request &req
         response.y_inches = traj.getFirstState().state().getTranslation().y();
         response.heading_degrees = traj.getFirstHeading().state().getDegrees();
 
-        std::cout << response.x_inches << ", " << response.y_inches << ", " << response.heading_degrees << std::endl;
+        // std::cout << response.x_inches << ", " << response.y_inches << ", " << response.heading_degrees << std::endl;
     }
     catch(const std::out_of_range& e)
     {
@@ -270,7 +270,7 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
             // Always reset to red, the heading flip is handled by the trajectory itself
             bool success = reset_robot_pose(Alliance::RED, request.x_inches, request.y_inches, request.heading_degrees);
 
-            std::cout << "Requested heading: " << request.heading_degrees << std::endl;
+            ck::log_info << "Requested heading: " << request.heading_degrees << std::endl;
 
             if (!success)
             {
@@ -380,7 +380,7 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
 
         if (robot_status.get_alliance() == Alliance::BLUE)
         {
-            std::cout << "is blue" << std::endl;
+            // std::cout << "is blue" << std::endl;
             current_trajectory = traj_map.at(request.autonomous_name).at(request.trajectory_index).blue_trajectory;
             path = traj_map.at(request.autonomous_name).at(request.trajectory_index).blue_path;
         }
@@ -474,7 +474,7 @@ int main(int argc, char **argv)
     // ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
     static ros::ServiceServer service_start = node->advertiseService("start_trajectory", start_trajectory);
     static ros::ServiceServer service_get_autonomous_info = node->advertiseService("get_autonomous_info", get_autonomous_info);
-    static ros::ServiceServer service_stop = node->advertiseService("stop_trajectory", start_trajectory);
+    static ros::ServiceServer service_stop = node->advertiseService("stop_trajectory", stop_trajectory);
     static ros::ServiceServer reset_pose_confirmation = node->advertiseService("reset_pose_with_confirmation", reset_pose_confirmation_service);
 	static ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
     static ros::Publisher swerve_auto_control_publisher_ = node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>("/SwerveAutoControl", 10);
@@ -516,7 +516,7 @@ int main(int argc, char **argv)
             if (motion_planner->isDone())
             {
                 trajectory_status.is_completed = true;
-                std::cout << "TRAJ TIME = " << ros::Time::now().toSec() - traj_start_time << std::endl;
+                ck::log_info << "TRAJ TIME = " << ros::Time::now().toSec() - traj_start_time << std::endl;
                 traj_running = false;
                 persistHeadingRads = motion_planner->getHeadingSetpoint().state().getRadians();
                 geometry::Twist blank_twist;
