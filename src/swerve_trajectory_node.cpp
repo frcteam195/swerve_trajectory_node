@@ -491,6 +491,11 @@ int main(int argc, char **argv)
             motion_planner->reset();
         }
 
+        if (robot_status.get_mode() == RobotMode::DISABLED)
+        {
+            usePersistHeading = false;
+        }
+
         ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control swerve_auto_control;
 
         trajectory_status.is_running = traj_running;
@@ -541,17 +546,17 @@ int main(int argc, char **argv)
         {
             geometry::Twist blank_twist;
             geometry::Pose blank_pose;
-            if (usePersistHeading)
-            {
-                blank_pose.orientation.yaw(persistHeadingRads);
-            }
+            blank_pose.orientation.yaw(persistHeadingRads);
 
             // blank_pose.orientation.yaw(ck::math::PI / 2.0);
             swerve_auto_control.twist = geometry::to_msg(blank_twist);
             swerve_auto_control.pose = geometry::to_msg(blank_pose);
         }
 
-        swerve_auto_control_publisher.publish(swerve_auto_control);
+        if (usePersistHeading)
+        {
+            swerve_auto_control_publisher.publish(swerve_auto_control);
+        }
         status_publisher->publish(trajectory_status);
         rate.sleep();
     }
