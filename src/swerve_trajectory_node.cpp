@@ -80,7 +80,6 @@ TimedView<Pose2dWithCurvature, Rotation2d> timed_view;
 Pose2d current_pose;
 double current_timestamp = 0.0;
 double persistHeadingRads = 0.0;
-bool usePersistHeading = false;
 std::string active_trajectory_name = "";
 
 ck_ros_msgs_node::Trajectory_Status trajectory_status;
@@ -283,7 +282,6 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
             double elapsed_time_s;
             double heading_rad = ck::math::deg2rad(request.heading_degrees);
             persistHeadingRads = heading_rad;
-            usePersistHeading = true;
             // if (robot_status.get_alliance() == Alliance::BLUE)
             // {
             //     heading_rad += M_PI;
@@ -491,11 +489,6 @@ int main(int argc, char **argv)
             motion_planner->reset();
         }
 
-        if (robot_status.get_mode() == RobotMode::DISABLED)
-        {
-            usePersistHeading = false;
-        }
-
         ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control swerve_auto_control;
 
         trajectory_status.is_running = traj_running;
@@ -510,6 +503,15 @@ int main(int argc, char **argv)
                 std::cout << "TRAJ TIME = " << ros::Time::now().toSec() - traj_start_time << std::endl;
                 traj_running = false;
                 persistHeadingRads = motion_planner->getHeadingSetpoint().state().getRadians();
+                geometry::Twist blank_twist;
+                geometry::Pose blank_pose;
+                blank_pose.orientation.yaw(persistHeadingRads);
+
+                // blank_pose.orientation.yaw(ck::math::PI / 2.0);
+                swerve_auto_control.twist = geometry::to_msg(blank_twist);
+                swerve_auto_control.pose = geometry::to_msg(blank_pose);
+                swerve_auto_control_publisher.publish(swerve_auto_control);
+
                 continue;
             }
 
@@ -541,22 +543,9 @@ int main(int argc, char **argv)
             swerve_auto_control.pose.orientation = tf2::toMsg(heading);
 
             trajectory_status.progress = motion_planner->getCurrentProgress();
-        }
-        else
-        {
-            geometry::Twist blank_twist;
-            geometry::Pose blank_pose;
-            blank_pose.orientation.yaw(persistHeadingRads);
-
-            // blank_pose.orientation.yaw(ck::math::PI / 2.0);
-            swerve_auto_control.twist = geometry::to_msg(blank_twist);
-            swerve_auto_control.pose = geometry::to_msg(blank_pose);
-        }
-
-        if (usePersistHeading)
-        {
             swerve_auto_control_publisher.publish(swerve_auto_control);
         }
+
         status_publisher->publish(trajectory_status);
         rate.sleep();
     }
