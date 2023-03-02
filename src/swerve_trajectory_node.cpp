@@ -64,6 +64,7 @@ ros::NodeHandle *node;
 
 static ros::Publisher *path_publisher;
 static ros::Publisher *reset_pose_publisher;
+static ros::Publisher *swerve_auto_control_publisher;
 static ros::Publisher *status_publisher;
 
 // std::map<std::string, swerve_trajectory_node::OutputTrajectory> traj_map;
@@ -283,7 +284,6 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
             double elapsed_time_s;
             double heading_rad = ck::math::deg2rad(request.heading_degrees);
             persistHeadingRads = heading_rad;
-            usePersistHeading = true;
             // if (robot_status.get_alliance() == Alliance::BLUE)
             // {
             //     heading_rad += M_PI;
@@ -317,6 +317,20 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
             return false;
         }
         reset_pose_service_running = false;
+
+        
+        ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control auto_control;
+
+        geometry::Twist blank_twist;
+        geometry::Pose blank_pose;
+        blank_pose.orientation.yaw(persistHeadingRads);
+
+        // blank_pose.orientation.yaw(ck::math::PI / 2.0);
+        auto_control.twist = geometry::to_msg(blank_twist);
+        auto_control.pose = geometry::to_msg(blank_pose);
+
+        swerve_auto_control_publisher->publish(auto_control);
+
         return true;
     }
     else
@@ -464,7 +478,8 @@ int main(int argc, char **argv)
     static ros::ServiceServer service_stop = node->advertiseService("stop_trajectory", start_trajectory);
     static ros::ServiceServer reset_pose_confirmation = node->advertiseService("reset_pose_with_confirmation", reset_pose_confirmation_service);
 	static ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
-    static ros::Publisher swerve_auto_control_publisher = node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>("/SwerveAutoControl", 10);
+    static ros::Publisher swerve_auto_control_publisher_ = node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>("/SwerveAutoControl", 10);
+    swerve_auto_control_publisher = &swerve_auto_control_publisher_;
     static ros::Publisher path_publisher_ = node->advertise<nav_msgs::Path>("/CurrentPath", 10, true);
     path_publisher = &path_publisher_;
     static ros::Publisher reset_pose_publisher_ = node->advertise<nav_msgs::Odometry>("/ResetHeading", 10);
@@ -555,7 +570,7 @@ int main(int argc, char **argv)
 
         if (usePersistHeading)
         {
-            swerve_auto_control_publisher.publish(swerve_auto_control);
+            swerve_auto_control_publisher->publish(swerve_auto_control);
         }
         status_publisher->publish(trajectory_status);
         rate.sleep();
