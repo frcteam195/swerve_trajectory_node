@@ -350,6 +350,7 @@ bool stop_trajectory(swerve_trajectory_node::StopTrajectory::Request &request, s
         trajectory_status.trajectory_name = "";
         trajectory_status.is_running = false;
         trajectory_status.is_completed = false;
+        trajectory_status.delicious = false;
         trajectory_status.trajectory_index = 0;
         trajectory_status.progress = 0.0;
 
@@ -395,6 +396,7 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
         trajectory_status.trajectory_name = request.autonomous_name;
         trajectory_status.is_running = true;
         trajectory_status.is_completed = false;
+        trajectory_status.delicious = false;
         trajectory_status.trajectory_index = request.trajectory_index;
         trajectory_status.progress = 0.0;
 
@@ -516,6 +518,7 @@ int main(int argc, char **argv)
             if (motion_planner->isDone())
             {
                 trajectory_status.is_completed = true;
+                trajectory_status.delicious = true;
                 ck::log_info << "TRAJ TIME = " << ros::Time::now().toSec() - traj_start_time << std::endl;
                 traj_running = false;
                 persistHeadingRads = motion_planner->getHeadingSetpoint().state().getRadians();
