@@ -220,6 +220,30 @@ void robot_odometry_subscriber(const nav_msgs::Odometry &odom)
     current_pose = Pose2d(x, y, Rotation2d::fromRadians(heading));
 }
 
+bool get_allianced_trajectory(std::string& auto_name, AutoTrajectory& output_trajectory)
+{
+    try
+    {
+        auto traj_list = traj_map.at(auto_name);
+
+        if (robot_status.get_alliance() == Alliance::BLUE)
+        {
+            output_trajectory = traj_list.at(0).blue_trajectory;
+        }
+        else
+        {
+            output_trajectory = traj_list.at(0).red_trajectory;
+        }
+    }
+    catch(const std::out_of_range& e)
+    {
+        ck::log_error << e.what() << std::endl;
+        std::cerr << e.what() << '\n';
+        return false;
+    }
+    return true;
+}
+
 bool get_autonomous_info(swerve_trajectory_node::GetAutonomousInfo::Request &request, swerve_trajectory_node::GetAutonomousInfo::Response &response)
 {
     ck::log_info << "Autonomous Info Requested for: " << request.autonomous_name << std::endl;
@@ -228,19 +252,6 @@ bool get_autonomous_info(swerve_trajectory_node::GetAutonomousInfo::Request &req
     {
         auto traj_list = traj_map.at(request.autonomous_name);
         response.number_of_trajectories = (int)traj_list.size();
-
-        auto traj = traj_list.at(0).red_trajectory;
-
-        if (robot_status.get_alliance() == Alliance::BLUE)
-        {
-            traj = traj_list.at(0).blue_trajectory;
-        }
-
-        response.x_inches = traj.getFirstState().state().getTranslation().x();
-        response.y_inches = traj.getFirstState().state().getTranslation().y();
-        response.heading_degrees = traj.getFirstHeading().state().getDegrees();
-
-        // std::cout << response.x_inches << ", " << response.y_inches << ", " << response.heading_degrees << std::endl;
     }
     catch(const std::out_of_range& e)
     {
@@ -248,9 +259,6 @@ bool get_autonomous_info(swerve_trajectory_node::GetAutonomousInfo::Request &req
         std::cerr << e.what() << '\n';
         response.valid = false;
         response.number_of_trajectories = -1;
-        response.x_inches = -1;
-        response.y_inches = -1;
-        response.heading_degrees = -1;
 
         return false;
     }
@@ -267,28 +275,33 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
         try
         {
             reset_pose_service_running = true;
-            // Always reset to red, the heading flip is handled by the trajectory itself
-            bool success = reset_robot_pose(Alliance::RED, request.x_inches, request.y_inches, request.heading_degrees);
+            AutoTrajectory traj;
+            bool traj_get_success = get_allianced_trajectory(request.auto_name, traj);
 
-            ck::log_info << "Requested heading: " << request.heading_degrees << std::endl;
+            if (!traj_get_success)
+            {
+                throw std::exception();
+            }
+            double x_in = traj.getFirstState().state().getTranslation().x();
+            double y_in = traj.getFirstState().state().getTranslation().y();
+            double heading_deg = traj.getFirstHeading().state().getDegrees();
+
+            // Always reset to red, the heading flip is handled by the trajectory itself
+            bool success = reset_robot_pose(Alliance::RED, x_in, y_in, heading_deg);
 
             if (!success)
             {
-                reset_pose_service_running = false;
-                return false;
+                throw std::exception();
             }
 
             ros::Time start_time = ros::Time::now();
             double timeout_s = 0.25;
             double elapsed_time_s;
-            double heading_rad = ck::math::deg2rad(request.heading_degrees);
+            double heading_rad = ck::math::deg2rad(heading_deg);
             persistHeadingRads = heading_rad;
-            // if (robot_status.get_alliance() == Alliance::BLUE)
-            // {
-            //     heading_rad += M_PI;
-            // }
+
             bool reset_still_running = true;
-            Pose2d requested_pose(request.x_inches, request.y_inches, Rotation2d::fromRadians(heading_rad));
+            Pose2d requested_pose(x_in, y_in, Rotation2d::fromRadians(heading_deg));
             do {
                 ros::spinOnce();
                 if (current_pose.epsilonAllEquals(requested_pose, 1))
