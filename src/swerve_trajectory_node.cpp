@@ -143,10 +143,6 @@ void generate_trajectories(void)
 
         std::string auto_name = trajectory_json["name"];
 
-        if (auto_name != "Test_Test_StraightLine") continue;
-
-        std::cout << auto_name << std::endl;
-
         if (!trajectory_json.contains("paths"))
         {
             ck::log_warn << auto_name << " - Invalid trajectory - skipping." << std::endl;
