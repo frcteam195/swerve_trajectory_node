@@ -33,14 +33,27 @@ struct TrajectorySet
     nav_msgs::Path blue_path;
 };
 
+struct PathPoint
+{
+    ck::team254_geometry::Pose2d waypoint;
+    ck::team254_geometry::Rotation2d heading;
+};
+
 struct PathStruct
 {
     std::vector<ck::team254_geometry::Pose2d> waypoints;
     std::vector<ck::team254_geometry::Rotation2d> headings;
+};
+
+struct PathSet
+{
+    PathStruct red;
+    PathStruct blue;
     double max_velocity_in_per_sec;
 };
 
 std::vector<PathStruct> mirror_paths(std::vector<PathStruct> paths);
+PathPoint mirror_point(PathPoint point);
 
 void debug_trajectory(Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> trajectory);
 void debug_trajectory_iterator(Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> trajectory, double timestep=0.1);

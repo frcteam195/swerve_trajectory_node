@@ -6,7 +6,7 @@ std::vector<PathStruct> mirror_paths(std::vector<PathStruct> paths)
 
     for (size_t i = 0; i < paths.size(); i++)
     {
-        mirror.at(i).max_velocity_in_per_sec = paths.at(i).max_velocity_in_per_sec;
+        // mirror.at(i).max_velocity_in_per_sec = paths.at(i).max_velocity_in_per_sec;
 
         for (size_t j = 0; j < paths.at(i).waypoints.size(); j++)
         {
@@ -29,6 +29,49 @@ std::vector<PathStruct> mirror_paths(std::vector<PathStruct> paths)
             mirror.at(i).headings.push_back(mirror_heading);
         }
     }
+
+    return mirror;
+}
+
+PathStruct mirror_path(PathStruct path)
+{
+    PathStruct mirror;
+
+    for (size_t i = 0; i < path.waypoints.size(); i++)
+    {
+        double x = path.waypoints[i].getTranslation().x();
+        double y = path.waypoints[i].getTranslation().y();
+        ck::team254_geometry::Rotation2d track = path.waypoints[i].getRotation();
+        ck::team254_geometry::Rotation2d heading = path.headings[i];
+
+        ck::team254_geometry::Rotation2d mirror_track(-track.cos(), track.sin(), true);
+        ck::team254_geometry::Rotation2d mirror_heading(-heading.cos(), heading.sin(), true);
+
+        double mirror_x = (FIELD_LENGTH_INCHES/2.0 - x) * 2.0 + x;
+
+        mirror.waypoints.emplace_back(Translation2d(mirror_x, y), mirror_track);
+        mirror.headings.push_back(mirror_heading);
+    }
+
+    return mirror;
+}
+
+PathPoint mirror_point(PathPoint point)
+{
+    PathPoint mirror;
+
+    double x = point.waypoint.getTranslation().x();
+    double y = point.waypoint.getTranslation().y();
+    ck::team254_geometry::Rotation2d track = point.waypoint.getRotation();
+    ck::team254_geometry::Rotation2d heading = point.heading;
+
+    ck::team254_geometry::Rotation2d mirror_track(-track.cos(), track.sin(), true);
+    ck::team254_geometry::Rotation2d mirror_heading(-heading.cos(), heading.sin(), true);
+
+    double mirror_x = (FIELD_LENGTH_INCHES/2.0 - x) * 2.0 + x;
+
+    mirror.waypoint = ck::team254_geometry::Pose2d(mirror_x, y, mirror_track);
+    mirror.heading = mirror_heading;
 
     return mirror;
 }

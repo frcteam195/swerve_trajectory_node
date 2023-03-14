@@ -143,39 +143,43 @@ void generate_trajectories(void)
 
         std::string auto_name = trajectory_json["name"];
 
+        if (auto_name != "Test_Test_StraightLine") continue;
+
+        std::cout << auto_name << std::endl;
+
         if (!trajectory_json.contains("paths"))
         {
             ck::log_warn << auto_name << " - Invalid trajectory - skipping." << std::endl;
             continue;
         }
 
-        vector<PathStruct> red_paths = ck::json::parse_json_paths(trajectory_json["paths"]);
-        vector<PathStruct> blue_paths = mirror_paths(red_paths);
+        vector<PathSet> pathSet = ck::json::parse_json_paths(trajectory_json["paths"]);
 
         ck::log_info << auto_name << std::endl;
 
-        PathStruct red_path = red_paths.at(0);
-        PathStruct blue_path = blue_paths.at(0);
+        // std::cout << pathSet.at(0).red.waypoints[0].getTranslation().x() << std::endl;
+        // std::cout << pathSet.at(0).blue.waypoints[0].getTranslation().x() << std::endl;
 
         // break;
 
         vector<pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path>> traj_paths;
         vector<TrajectorySet> traj_sets;
 
-        for (size_t i = 0; i < red_paths.size(); i++)
+        for (size_t i = 0; i < pathSet.size(); i++)
         {
             double max_speed = robot_max_fwd_vel;
 
-            double path_desired_speed = red_paths.at(i).max_velocity_in_per_sec;
+            // double path_desired_speed = red_paths.at(i).max_velocity_in_per_sec;
+            double path_desired_speed = pathSet[0].max_velocity_in_per_sec;
             if (path_desired_speed > 0 && path_desired_speed < robot_max_fwd_vel)
             {
-                max_speed = red_paths.at(i).max_velocity_in_per_sec;
+                max_speed = pathSet[i].max_velocity_in_per_sec;
             }
 
             TrajectorySet traj_set;
             traj_set.red_trajectory = motion_planner->generateTrajectory(false,
-                                                                         red_paths.at(i).waypoints,
-                                                                         red_paths.at(i).headings,
+                                                                         pathSet.at(i).red.waypoints,
+                                                                         pathSet.at(i).red.headings,
                                                                          max_speed,
                                                                          robot_max_fwd_accel,
                                                                          max_voltage);
@@ -183,8 +187,8 @@ void generate_trajectories(void)
             traj_set.red_path = package_trajectory(traj_set.red_trajectory);
             
             traj_set.blue_trajectory = motion_planner->generateTrajectory(false,
-                                                                         blue_paths.at(i).waypoints,
-                                                                         blue_paths.at(i).headings,
+                                                                         pathSet.at(i).blue.waypoints,
+                                                                         pathSet.at(i).blue.headings,
                                                                          max_speed,
                                                                          robot_max_fwd_accel,
                                                                          max_voltage);
