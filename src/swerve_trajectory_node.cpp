@@ -166,7 +166,7 @@ void generate_trajectories(void)
             double max_speed = robot_max_fwd_vel;
 
             // double path_desired_speed = red_paths.at(i).max_velocity_in_per_sec;
-            double path_desired_speed = pathSet[0].max_velocity_in_per_sec;
+            double path_desired_speed = pathSet[i].max_velocity_in_per_sec;
             if (path_desired_speed > 0 && path_desired_speed < robot_max_fwd_vel)
             {
                 max_speed = pathSet[i].max_velocity_in_per_sec;
