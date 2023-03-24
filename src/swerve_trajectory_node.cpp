@@ -555,8 +555,7 @@ int main(int argc, char **argv)
 
             current_timestamp = ros::Time::now().toSec();
 
-            Pose2d test_pose(current_pose.getTranslation().x(), current_pose.getTranslation().y() - 10.0, current_pose.getRotation());
-            ChassisSpeeds output = motion_planner->update(current_timestamp, test_pose);
+            ChassisSpeeds output = motion_planner->update(current_timestamp, current_pose);
 
             Pose2d robot_pose_vel(output.vxMetersPerSecond * 0.01, output.vyMetersPerSecond * 0.01, Rotation2d::fromRadians(output.omegaRadiansPerSecond * 0.01));
             Twist2d twist_vel = Pose2d::log(robot_pose_vel);
