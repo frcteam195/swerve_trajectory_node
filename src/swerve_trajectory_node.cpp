@@ -161,6 +161,8 @@ void generate_trajectories(void)
         vector<pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path>> traj_paths;
         vector<TrajectorySet> traj_sets;
 
+        // ros::Time start = ros::Time::now();
+
         for (size_t i = 0; i < pathSet.size(); i++)
         {
             double max_speed = robot_max_fwd_vel;
@@ -181,7 +183,7 @@ void generate_trajectories(void)
                                                                          max_voltage);
             
             traj_set.red_path = package_trajectory(traj_set.red_trajectory);
-            
+
             traj_set.blue_trajectory = motion_planner->generateTrajectory(false,
                                                                          pathSet.at(i).blue.waypoints,
                                                                          pathSet.at(i).blue.headings,
@@ -206,6 +208,10 @@ void generate_trajectories(void)
         }
 
         traj_map.insert({auto_name, traj_sets});
+
+        // ros::Duration elapsed = ros::Time::now() - start;
+
+        // ROS_ERROR_STREAM("Generated trajectory in: " << elapsed.toSec() << " seconds." << std::endl);
     }
 }
 
@@ -549,7 +555,8 @@ int main(int argc, char **argv)
 
             current_timestamp = ros::Time::now().toSec();
 
-            ChassisSpeeds output = motion_planner->update(current_timestamp, current_pose);
+            Pose2d test_pose(current_pose.getTranslation().x(), current_pose.getTranslation().y() - 10.0, current_pose.getRotation());
+            ChassisSpeeds output = motion_planner->update(current_timestamp, test_pose);
 
             Pose2d robot_pose_vel(output.vxMetersPerSecond * 0.01, output.vyMetersPerSecond * 0.01, Rotation2d::fromRadians(output.omegaRadiansPerSecond * 0.01));
             Twist2d twist_vel = Pose2d::log(robot_pose_vel);
