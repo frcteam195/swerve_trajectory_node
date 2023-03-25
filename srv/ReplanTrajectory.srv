@@ -1,0 +1,8 @@
+# Inputs
+string autonomous_name
+uint32 index
+float64 x_offset
+float64 y_offset
+---
+# Outputs
+bool success

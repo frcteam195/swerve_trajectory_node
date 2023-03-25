@@ -58,6 +58,7 @@ add_service_files(
   ResetPoseWithConfirmation.srv
   StartTrajectory.srv
   StopTrajectory.srv
+  ReplanTrajectory.srv
 )
 
 ## Generate actions in the 'action' folder

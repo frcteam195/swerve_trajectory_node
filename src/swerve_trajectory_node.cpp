@@ -1,6 +1,7 @@
 #include "swerve_trajectory_node.hpp"
 #include "swerve_trajectory_node/StartTrajectory.h"
 #include "swerve_trajectory_node/StopTrajectory.h"
+#include "swerve_trajectory_node/ReplanTrajectory.h"
 #include "swerve_trajectory_node/OutputTrajectory.h"
 #include "swerve_trajectory_node/GetAutonomousInfo.h"
 #include "swerve_trajectory_node/ResetPoseWithConfirmation.h"
@@ -71,7 +72,9 @@ static ros::Publisher *status_publisher;
 // std::map<std::string, std::pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path> traj_map;
 // std::map<std::string, pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path>> traj_map;
 // std::map<std::string, vector<pair<AutoTrajectory, nav_msgs::Path>>> traj_map;
+std::map<std::string, std::vector<PathSet>> path_set_map;
 std::map<std::string, std::vector<TrajectorySet>> traj_map;
+std::map<std::string, std::vector<TrajectorySet>> replanned_traj_map;
 
 DriveMotionPlanner *motion_planner;
 
@@ -150,6 +153,7 @@ void generate_trajectories(void)
         }
 
         vector<PathSet> pathSet = ck::json::parse_json_paths(trajectory_json["paths"]);
+        path_set_map.insert({auto_name, pathSet});
 
         ck::log_info << auto_name << std::endl;
 
@@ -405,6 +409,14 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
             path = traj_map.at(request.autonomous_name).at(request.trajectory_index).blue_path;
         }
 
+        ck::log_warn << "replanned traj map size: " << replanned_traj_map.size() << std::flush;
+        if (replanned_traj_map.find(request.autonomous_name) != replanned_traj_map.end())
+        {
+            ck::log_warn << "Trajectory has been replanned!!" << std::flush;
+            current_trajectory = replanned_traj_map.at(request.autonomous_name).at(request.trajectory_index).red_trajectory;
+            path = replanned_traj_map.at(request.autonomous_name).at(request.trajectory_index).red_path;
+        }
+
         timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(current_trajectory);
         TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
         motion_planner->reset();
@@ -440,6 +452,115 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
 
     ck::log_info << "Accepted trajectory" << std::flush;
     return true;
+}
+
+bool replan_trajectory(swerve_trajectory_node::ReplanTrajectory::Request &request, swerve_trajectory_node::ReplanTrajectory::Response &response)
+{
+    ck::log_warn << "Requesting replan for auto: " << request.autonomous_name << ", after path index: " << request.index << std::flush;
+
+    try
+    {
+        ros::Time start = ros::Time::now();
+
+        std::vector<PathSet> auto_paths = path_set_map.at(request.autonomous_name);
+        std::vector<TrajectorySet> base_traj_set = traj_map.at(request.autonomous_name);
+
+        // debug_trajectory(base_traj_set[request.index].red_trajectory);
+
+        Pose2d prev_pose = auto_paths[request.index].red.waypoints[auto_paths[request.index].red.waypoints.size()-1];
+        Pose2d new_pose(prev_pose.getTranslation().x() + request.x_offset, prev_pose.getTranslation().y() + request.y_offset, prev_pose.getRotation());
+        // auto_paths[request.index].red.waypoints[auto_paths[request.index].red.waypoints.size()-1] = auto_paths[request.index].red.waypoints[auto_paths[request.index].red.waypoints.size()-1].transformBy(Transform2d(Translation2d(request.x_offset, request.y_offset), Rotation2d::fromDegrees(0)));
+        auto_paths[request.index].red.waypoints[auto_paths[request.index].red.waypoints.size()-1] = new_pose;
+
+        double max_speed = robot_max_fwd_vel;
+        double path_desired_speed = auto_paths.at(request.index).max_velocity_in_per_sec;
+        if (path_desired_speed > 0 && path_desired_speed < robot_max_fwd_vel)
+        {
+            max_speed = path_desired_speed;
+        }
+
+        base_traj_set[request.index].red_trajectory = motion_planner->generateTrajectory(false,
+                                                                                         auto_paths[request.index].red.waypoints,
+                                                                                         auto_paths[request.index].red.headings,
+                                                                                         max_speed,
+                                                                                         robot_max_fwd_accel,
+                                                                                         max_voltage);
+
+        // debug_trajectory(base_traj_set[request.index].red_trajectory);
+        base_traj_set[request.index].red_path = package_trajectory(base_traj_set[request.index].red_trajectory);
+
+        if (request.index < auto_paths.size() - 1)
+        {
+            // debug_trajectory(base_traj_set[request.index+1].red_trajectory);
+            prev_pose = auto_paths[request.index+1].red.waypoints[0];
+            new_pose = Pose2d(prev_pose.getTranslation().x() + request.x_offset, prev_pose.getTranslation().y() + request.y_offset, prev_pose.getRotation());
+            auto_paths[request.index+1].red.waypoints[0] = new_pose;
+
+            max_speed = robot_max_fwd_vel;
+            path_desired_speed = auto_paths[request.index+1].max_velocity_in_per_sec;
+            if (path_desired_speed > 0 && path_desired_speed < robot_max_fwd_vel)
+            {
+                max_speed = path_desired_speed;
+            }
+
+            base_traj_set[request.index+1].red_trajectory = motion_planner->generateTrajectory(false,
+                                                                                            auto_paths[request.index+1].red.waypoints,
+                                                                                            auto_paths[request.index+1].red.headings,
+                                                                                            max_speed,
+                                                                                            robot_max_fwd_accel,
+                                                                                            max_voltage);
+            // debug_trajectory(base_traj_set[request.index+1].red_trajectory);
+
+            base_traj_set[request.index+1].red_path = package_trajectory(base_traj_set[request.index+1].red_trajectory);
+        }
+
+        replanned_traj_map[request.autonomous_name] = base_traj_set;
+        // base_traj_set.at(request.index).red_trajectory = 
+
+            // double max_speed = robot_max_fwd_vel;
+
+            // // double path_desired_speed = red_paths.at(i).max_velocity_in_per_sec;
+            // double path_desired_speed = pathSet[i].max_velocity_in_per_sec;
+            // if (path_desired_speed > 0 && path_desired_speed < robot_max_fwd_vel)
+            // {
+            //     max_speed = pathSet[i].max_velocity_in_per_sec;
+            // }
+
+            // TrajectorySet traj_set;
+            // traj_set.red_trajectory = motion_planner->generateTrajectory(false,
+            //                                                              pathSet.at(i).red.waypoints,
+            //                                                              pathSet.at(i).red.headings,
+            //                                                              max_speed,
+            //                                                              robot_max_fwd_accel,
+            //                                                              max_voltage);
+            
+            // traj_set.red_path = package_trajectory(traj_set.red_trajectory);
+
+            // traj_set.blue_trajectory = motion_planner->generateTrajectory(false,
+            //                                                              pathSet.at(i).blue.waypoints,
+            //                                                              pathSet.at(i).blue.headings,
+            //                                                              max_speed,
+            //                                                              robot_max_fwd_accel,
+            //                                                              max_voltage);
+
+            // traj_set.blue_path = package_trajectory(traj_set.blue_trajectory);
+
+            // traj_sets.push_back(traj_set);
+
+        ros::Duration elapsed = ros::Time::now() - start;
+        ck::log_warn << "Took " << elapsed.toSec() << " seconds to replan." << std::flush;
+
+        response.success = true;
+        return true;
+
+    }
+    catch (const std::out_of_range &exception)
+    {
+        ck::log_error << "Requested autonomous or index is invalid" << std::flush;
+        ck::log_error << exception.what() << std::flush;
+        response.success = false;
+        return false;
+    }
 }
 
 int main(int argc, char **argv)
@@ -494,6 +615,7 @@ int main(int argc, char **argv)
 
     // ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
     static ros::ServiceServer service_start = node->advertiseService("start_trajectory", start_trajectory);
+    static ros::ServiceServer service_replan = node->advertiseService("replan_trajectory", replan_trajectory);
     static ros::ServiceServer service_get_autonomous_info = node->advertiseService("get_autonomous_info", get_autonomous_info);
     static ros::ServiceServer service_stop = node->advertiseService("stop_trajectory", stop_trajectory);
     static ros::ServiceServer reset_pose_confirmation = node->advertiseService("reset_pose_with_confirmation", reset_pose_confirmation_service);
