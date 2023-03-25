@@ -82,8 +82,8 @@ std::atomic_bool traj_running{false};
 Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> current_trajectory;
 TimedView<Pose2dWithCurvature, Rotation2d> timed_view;
 Pose2d current_pose;
-double current_timestamp = 0.0;
-double persistHeadingRads = 0.0;
+double current_timestamp{0.0};
+double persistHeadingRads{0.0};
 std::string active_trajectory_name = "";
 
 ck_ros_msgs_node::Trajectory_Status trajectory_status;
@@ -504,48 +504,17 @@ bool replan_trajectory(swerve_trajectory_node::ReplanTrajectory::Request &reques
             }
 
             base_traj_set[request.index+1].red_trajectory = motion_planner->generateTrajectory(false,
-                                                                                            auto_paths[request.index+1].red.waypoints,
-                                                                                            auto_paths[request.index+1].red.headings,
-                                                                                            max_speed,
-                                                                                            robot_max_fwd_accel,
-                                                                                            max_voltage);
+                                                                                               auto_paths[request.index+1].red.waypoints,
+                                                                                               auto_paths[request.index+1].red.headings,
+                                                                                               max_speed,
+                                                                                               robot_max_fwd_accel,
+                                                                                               max_voltage);
             // debug_trajectory(base_traj_set[request.index+1].red_trajectory);
 
             base_traj_set[request.index+1].red_path = package_trajectory(base_traj_set[request.index+1].red_trajectory);
         }
 
         replanned_traj_map[request.autonomous_name] = base_traj_set;
-        // base_traj_set.at(request.index).red_trajectory = 
-
-            // double max_speed = robot_max_fwd_vel;
-
-            // // double path_desired_speed = red_paths.at(i).max_velocity_in_per_sec;
-            // double path_desired_speed = pathSet[i].max_velocity_in_per_sec;
-            // if (path_desired_speed > 0 && path_desired_speed < robot_max_fwd_vel)
-            // {
-            //     max_speed = pathSet[i].max_velocity_in_per_sec;
-            // }
-
-            // TrajectorySet traj_set;
-            // traj_set.red_trajectory = motion_planner->generateTrajectory(false,
-            //                                                              pathSet.at(i).red.waypoints,
-            //                                                              pathSet.at(i).red.headings,
-            //                                                              max_speed,
-            //                                                              robot_max_fwd_accel,
-            //                                                              max_voltage);
-            
-            // traj_set.red_path = package_trajectory(traj_set.red_trajectory);
-
-            // traj_set.blue_trajectory = motion_planner->generateTrajectory(false,
-            //                                                              pathSet.at(i).blue.waypoints,
-            //                                                              pathSet.at(i).blue.headings,
-            //                                                              max_speed,
-            //                                                              robot_max_fwd_accel,
-            //                                                              max_voltage);
-
-            // traj_set.blue_path = package_trajectory(traj_set.blue_trajectory);
-
-            // traj_sets.push_back(traj_set);
 
         ros::Duration elapsed = ros::Time::now() - start;
         ck::log_warn << "Took " << elapsed.toSec() << " seconds to replan." << std::flush;
