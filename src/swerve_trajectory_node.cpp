@@ -143,6 +143,8 @@ void generate_trajectories(void)
 
         std::string auto_name = trajectory_json["name"];
 
+        if (auto_name != "Test_Test_StraightLine") continue;
+
         if (!trajectory_json.contains("paths"))
         {
             ck::log_warn << auto_name << " - Invalid trajectory - skipping." << std::endl;
@@ -182,6 +184,8 @@ void generate_trajectories(void)
                                                                          robot_max_fwd_accel,
                                                                          robot_max_fwd_deccel,
                                                                          max_voltage);
+
+            debug_trajectory_iterator(traj_set.red_trajectory, 0.01);
             
             traj_set.red_path = package_trajectory(traj_set.red_trajectory);
 
