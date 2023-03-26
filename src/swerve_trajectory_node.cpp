@@ -197,6 +197,8 @@ void generate_trajectories(void)
                                                                          robot_max_fwd_deccel,
                                                                          max_voltage);
 
+            debug_trajectory_iterator(traj_set.blue_trajectory, 0.01);
+
             traj_set.blue_path = package_trajectory(traj_set.blue_trajectory);
 
             traj_sets.push_back(traj_set);
