@@ -102,6 +102,7 @@ void debug_trajectory_iterator(Trajectory<TimedState<Pose2dWithCurvature>, Timed
     const double totalProg = traj_it.getRemainingProgress();
 
     std::cout << "----------TRAJECTORY ITERATOR----------" << std::endl;
+    std::cout << "Total time: " << totalProg << " seconds" << std::endl;
     std::cout << "X (in.),Y (in.),Track (deg.), Heading (deg.), Velocity (in./s)" << std::endl;
 
     for (double i = 0.0; i < totalProg; i += timestep)
