@@ -52,6 +52,7 @@ struct PathSet
     double max_velocity_in_per_sec;
     double max_accel_in_per_sec;
     double max_decel_in_per_sec;
+    bool accel_smoothing;
 };
 
 std::vector<PathStruct> mirror_paths(std::vector<PathStruct> paths);

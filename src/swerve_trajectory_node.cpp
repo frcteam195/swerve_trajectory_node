@@ -229,6 +229,7 @@ void generate_trajectories(void)
                                                                          max_speed,
                                                                          desired_accel,
                                                                          desired_decel,
+                                                                         pathSet.at(i).accel_smoothing,
                                                                          max_voltage);
 
             traj_set.red_path = package_trajectory(traj_set.red_trajectory);
@@ -239,6 +240,7 @@ void generate_trajectories(void)
                                                                          max_speed,
                                                                          desired_accel,
                                                                          desired_decel,
+                                                                         pathSet.at(i).accel_smoothing,
                                                                          max_voltage);
 
             traj_set.blue_path = package_trajectory(traj_set.blue_trajectory);

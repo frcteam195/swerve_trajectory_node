@@ -14,6 +14,7 @@ namespace ck::json
         output.max_velocity_in_per_sec = -1;
         output.max_accel_in_per_sec = -1;
         output.max_decel_in_per_sec = -1;
+        output.accel_smoothing = true;
 
         for (auto json_waypoint : json_waypoints)
         {
@@ -83,6 +84,10 @@ namespace ck::json
             if (json_path.contains("max_decel"))
             {
                 path.max_decel_in_per_sec = ck::math::meters_to_inches(json_path["max_decel"]);
+            }
+            if (json_path.contains("accel_smoothing"))
+            {
+                path.accel_smoothing = json_path["accel_smoothing"];
             }
 
             output_paths.push_back(path);
