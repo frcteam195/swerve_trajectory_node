@@ -180,9 +180,9 @@ void generate_trajectories(void)
                                                                          pathSet.at(i).red.headings,
                                                                          max_speed,
                                                                          robot_max_fwd_accel,
-                                                                         robot_max_fwd_deccel,
+                                                                         robot_max_fwd_decel,
                                                                          max_voltage);
-            
+
             traj_set.red_path = package_trajectory(traj_set.red_trajectory);
 
             traj_set.blue_trajectory = motion_planner->generateTrajectory(false,
@@ -190,7 +190,7 @@ void generate_trajectories(void)
                                                                          pathSet.at(i).blue.headings,
                                                                          max_speed,
                                                                          robot_max_fwd_accel,
-                                                                         robot_max_fwd_deccel,
+                                                                         robot_max_fwd_decel,
                                                                          max_voltage);
 
             traj_set.blue_path = package_trajectory(traj_set.blue_trajectory);
@@ -338,7 +338,7 @@ bool reset_pose_confirmation_service(swerve_trajectory_node::ResetPoseWithConfir
         }
         reset_pose_service_running = false;
 
-        
+
         ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control auto_control;
 
         geometry::Twist blank_twist;
@@ -474,7 +474,7 @@ int main(int argc, char **argv)
 
     bool required_params_found = true;
     required_params_found &= n.getParam(CKSP(robot_max_fwd_accel), robot_max_fwd_accel);
-    required_params_found &= n.getParam(CKSP(robot_max_fwd_deccel), robot_max_fwd_deccel);
+    required_params_found &= n.getParam(CKSP(robot_max_fwd_decel), robot_max_fwd_decel);
     required_params_found &= n.getParam(CKSP(robot_max_fwd_vel), robot_max_fwd_vel);
     required_params_found &= n.getParam(CKSP(max_voltage), max_voltage);
     required_params_found &= n.getParam(CKSP(trajectory_directory), trajectory_directory);
@@ -492,7 +492,7 @@ int main(int argc, char **argv)
     motion_planner = new DriveMotionPlanner(robot_max_fwd_vel);
 
     robot_max_fwd_accel = ck::math::meters_to_inches(robot_max_fwd_accel);
-    robot_max_fwd_deccel = ck::math::meters_to_inches(robot_max_fwd_deccel);
+    robot_max_fwd_decel = ck::math::meters_to_inches(robot_max_fwd_decel);
     robot_max_fwd_vel = ck::math::meters_to_inches(robot_max_fwd_vel);
     // std::cout << "pre sub" << std::endl;
 
