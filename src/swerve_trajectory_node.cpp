@@ -9,6 +9,7 @@
 
 #include "ck_ros_msgs_node/Swerve_Drivetrain_Auto_Control.h"
 #include "ck_ros_msgs_node/Trajectory_Status.h"
+#include "ck_ros_base_msgs_node/TrajVelocities.h"
 
 #include "frc_robot_utilities/frc_robot_utilities.hpp"
 
@@ -66,6 +67,7 @@ static ros::Publisher *path_publisher;
 static ros::Publisher *reset_pose_publisher;
 static ros::Publisher *swerve_auto_control_publisher;
 static ros::Publisher *status_publisher;
+static ros::Publisher *traj_velocities_publisher;
 
 // std::map<std::string, swerve_trajectory_node::OutputTrajectory> traj_map;
 // std::map<std::string, std::pair<Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>>, nav_msgs::Path> traj_map;
@@ -122,6 +124,34 @@ nav_msgs::Path package_trajectory(Trajectory<TimedState<Pose2dWithCurvature>, Ti
     return path;
 }
 
+void get_trajectory_velocities(AutoTrajectory trajectory, ck_ros_base_msgs_node::TrajVelocity &traj_vel)
+{
+    auto timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(trajectory);
+    TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
+
+    const double totalProg = traj_it.getRemainingProgress();
+
+    // std::cout << "----------TRAJECTORY ITERATOR----------" << std::endl;
+    // std::cout << "Total time: " << totalProg << " seconds" << std::endl;
+    // std::cout << "X (in.),Y (in.),Track (deg.), Heading (deg.), Velocity (in./s)" << std::endl;
+
+    // TODO: timestep param
+    for (double i = 0.0; i < totalProg; i += 0.01)
+    {
+        auto sample_point = traj_it.preview(i);
+        // double x = sample_point.state().state().getTranslation().x();
+        // double y = sample_point.state().state().getTranslation().y();
+        // double track = sample_point.state().state().getRotation().getDegrees();
+        // double heading = sample_point.heading().state().getDegrees();
+        double velocity = sample_point.state().velocity();
+        traj_vel.velocities.push_back(velocity);
+
+        // std::cout << x << "," << y << "," << track << ", " << heading << "," << velocity << std::endl;
+    }
+
+    // std::cout << "---------------------------------------" << std::endl;
+}
+
 void generate_trajectories(void)
 {
     ck::log_info << "Generating all trajectories defined in: " << trajectory_directory << std::flush;
@@ -133,6 +163,8 @@ void generate_trajectories(void)
         ck::log_error << directory_path << " does not exist!" << std::flush;
         return;
     }
+
+    ck_ros_base_msgs_node::TrajVelocities traj_vels;
 
     for (const fs::directory_entry &trajectory_configuration : fs::directory_iterator(trajectory_directory))
     {
@@ -207,6 +239,16 @@ void generate_trajectories(void)
             // nav_msgs::Path output_path = package_trajectory(generated_trajectory);
 
             // traj_paths.push_back(std::make_pair(generated_trajectory, output_path));
+
+            ck_ros_base_msgs_node::TrajVelocity traj_vel;
+            traj_vel.autonomous_name = auto_name;
+            traj_vel.trajectory_index = i;
+            
+            get_trajectory_velocities(traj_set.red_trajectory, traj_vel);
+
+            traj_vels.traj_velocities.push_back(traj_vel);
+
+            // traj_vels.traj_velocities.push_back()
         }
 
         traj_map.insert({auto_name, traj_sets});
@@ -215,6 +257,8 @@ void generate_trajectories(void)
 
         // ROS_ERROR_STREAM("Generated trajectory in: " << elapsed.toSec() << " seconds." << std::endl);
     }
+
+    traj_velocities_publisher->publish(traj_vels);
 }
 
 void robot_odometry_subscriber(const nav_msgs::Odometry &odom)
@@ -510,6 +554,8 @@ int main(int argc, char **argv)
     reset_pose_publisher = &reset_pose_publisher_;
     static ros::Publisher status_publisher_ = node->advertise<ck_ros_msgs_node::Trajectory_Status>("/TrajectoryStatus", 10);
     status_publisher = &status_publisher_;
+    static ros::Publisher traj_velocities_publisher_ = node->advertise<ck_ros_base_msgs_node::TrajVelocities>("/TrajVelocities", 10, true);
+    traj_velocities_publisher = &traj_velocities_publisher_;
 
     generate_trajectories();
 
