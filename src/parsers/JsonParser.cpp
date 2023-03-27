@@ -12,6 +12,8 @@ namespace ck::json
         // pair<vector<Pose2d>, vector<Rotation2d>> output;
         PathSet output;
         output.max_velocity_in_per_sec = -1;
+        output.max_accel_in_per_sec = -1;
+        output.max_decel_in_per_sec = -1;
 
         for (auto json_waypoint : json_waypoints)
         {
@@ -73,6 +75,14 @@ namespace ck::json
             if (json_path.contains("max_velocity"))
             {
                 path.max_velocity_in_per_sec = json_path["max_velocity"];
+            }
+            if (json_path.contains("max_accel"))
+            {
+                path.max_accel_in_per_sec = ck::math::meters_to_inches(json_path["max_accel"]);
+            }
+            if (json_path.contains("max_decel"))
+            {
+                path.max_decel_in_per_sec = ck::math::meters_to_inches(json_path["max_decel"]);
             }
 
             output_paths.push_back(path);

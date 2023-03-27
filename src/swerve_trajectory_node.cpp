@@ -210,13 +210,25 @@ void generate_trajectories(void)
                 max_speed = pathSet[i].max_velocity_in_per_sec;
             }
 
+            double desired_accel = pathSet[i].max_accel_in_per_sec;
+            if (!ck::math::inRange(desired_accel, 0.0, robot_max_fwd_accel))
+            {
+                desired_accel = robot_max_fwd_accel;
+            }
+
+            double desired_decel = pathSet[i].max_decel_in_per_sec;
+            if (!ck::math::inRange(desired_decel, 0.0, robot_max_fwd_decel))
+            {
+                desired_decel = robot_max_fwd_decel;
+            }
+
             TrajectorySet traj_set;
             traj_set.red_trajectory = motion_planner->generateTrajectory(false,
                                                                          pathSet.at(i).red.waypoints,
                                                                          pathSet.at(i).red.headings,
                                                                          max_speed,
-                                                                         robot_max_fwd_accel,
-                                                                         robot_max_fwd_decel,
+                                                                         desired_accel,
+                                                                         desired_decel,
                                                                          max_voltage);
 
             traj_set.red_path = package_trajectory(traj_set.red_trajectory);
@@ -225,8 +237,8 @@ void generate_trajectories(void)
                                                                          pathSet.at(i).blue.waypoints,
                                                                          pathSet.at(i).blue.headings,
                                                                          max_speed,
-                                                                         robot_max_fwd_accel,
-                                                                         robot_max_fwd_decel,
+                                                                         desired_accel,
+                                                                         desired_decel,
                                                                          max_voltage);
 
             traj_set.blue_path = package_trajectory(traj_set.blue_trajectory);

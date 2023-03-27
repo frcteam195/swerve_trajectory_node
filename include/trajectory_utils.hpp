@@ -50,6 +50,8 @@ struct PathSet
     PathStruct red;
     PathStruct blue;
     double max_velocity_in_per_sec;
+    double max_accel_in_per_sec;
+    double max_decel_in_per_sec;
 };
 
 std::vector<PathStruct> mirror_paths(std::vector<PathStruct> paths);
