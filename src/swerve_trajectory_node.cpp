@@ -139,11 +139,15 @@ void get_trajectory_velocities(AutoTrajectory trajectory, ck_ros_base_msgs_node:
     for (double i = 0.0; i < totalProg; i += 0.01)
     {
         auto sample_point = traj_it.preview(i);
-        // double x = sample_point.state().state().getTranslation().x();
-        // double y = sample_point.state().state().getTranslation().y();
-        // double track = sample_point.state().state().getRotation().getDegrees();
-        // double heading = sample_point.heading().state().getDegrees();
+        double x = sample_point.state().state().getTranslation().x();
+        double y = sample_point.state().state().getTranslation().y();
+        double track = sample_point.state().state().getRotation().getDegrees();
+        double heading = sample_point.heading().state().getDegrees();
         double velocity = sample_point.state().velocity();
+        traj_vel.x_values.push_back(x);
+        traj_vel.y_values.push_back(y);
+        traj_vel.track_values.push_back(track);
+        traj_vel.heading_values.push_back(heading);
         traj_vel.velocities.push_back(velocity);
 
         // std::cout << x << "," << y << "," << track << ", " << heading << "," << velocity << std::endl;
