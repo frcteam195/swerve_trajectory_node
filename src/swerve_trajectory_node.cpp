@@ -9,7 +9,8 @@
 
 #include "ck_ros_msgs_node/Swerve_Drivetrain_Auto_Control.h"
 #include "ck_ros_msgs_node/Trajectory_Status.h"
-#include "ck_ros_base_msgs_node/TrajVelocities.h"
+#include "ck_ros_base_msgs_node/TrajectoryInfo.h"
+#include "ck_ros_base_msgs_node/TrajectoryInfo_Point.h"
 
 #include "frc_robot_utilities/frc_robot_utilities.hpp"
 
@@ -124,7 +125,7 @@ nav_msgs::Path package_trajectory(Trajectory<TimedState<Pose2dWithCurvature>, Ti
     return path;
 }
 
-void get_trajectory_velocities(AutoTrajectory trajectory, ck_ros_base_msgs_node::TrajVelocity &traj_vel)
+void get_trajectory_velocities(AutoTrajectory trajectory, ck_ros_base_msgs_node::TrajectoryInfo_Point &traj_info_point)
 {
     auto timed_view = TimedView<Pose2dWithCurvature, Rotation2d>(trajectory);
     TrajectoryIterator<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> traj_it(&timed_view);
@@ -144,11 +145,12 @@ void get_trajectory_velocities(AutoTrajectory trajectory, ck_ros_base_msgs_node:
         double track = sample_point.state().state().getRotation().getDegrees();
         double heading = sample_point.heading().state().getDegrees();
         double velocity = sample_point.state().velocity();
-        traj_vel.x_values.push_back(x);
-        traj_vel.y_values.push_back(y);
-        traj_vel.track_values.push_back(track);
-        traj_vel.heading_values.push_back(heading);
-        traj_vel.velocities.push_back(velocity);
+        traj_info_point.x_values.push_back(x);
+        traj_info_point.y_values.push_back(y);
+        traj_info_point.track_values.push_back(track);
+        traj_info_point.heading_values.push_back(heading);
+        traj_info_point.velocity_values.push_back(velocity);
+        traj_info_point.time.push_back(i);
 
         // std::cout << x << "," << y << "," << track << ", " << heading << "," << velocity << std::endl;
     }
@@ -168,7 +170,7 @@ void generate_trajectories(void)
         return;
     }
 
-    ck_ros_base_msgs_node::TrajVelocities traj_vels;
+    ck_ros_base_msgs_node::TrajectoryInfo traj_info;
 
     for (const fs::directory_entry &trajectory_configuration : fs::directory_iterator(trajectory_directory))
     {
@@ -226,6 +228,8 @@ void generate_trajectories(void)
             traj_set.red_trajectory = motion_planner->generateTrajectory(false,
                                                                          pathSet.at(i).red.waypoints,
                                                                          pathSet.at(i).red.headings,
+                                                                         ck::math::meters_to_inches(default_cook_mps),
+                                                                         ck::math::meters_to_inches(default_serve_mps), 
                                                                          max_speed,
                                                                          desired_accel,
                                                                          desired_decel,
@@ -237,6 +241,8 @@ void generate_trajectories(void)
             traj_set.blue_trajectory = motion_planner->generateTrajectory(false,
                                                                          pathSet.at(i).blue.waypoints,
                                                                          pathSet.at(i).blue.headings,
+                                                                         ck::math::meters_to_inches(default_cook_mps),
+                                                                         ck::math::meters_to_inches(default_serve_mps), 
                                                                          max_speed,
                                                                          desired_accel,
                                                                          desired_decel,
@@ -258,15 +264,15 @@ void generate_trajectories(void)
 
             // traj_paths.push_back(std::make_pair(generated_trajectory, output_path));
 
-            ck_ros_base_msgs_node::TrajVelocity traj_vel;
-            traj_vel.autonomous_name = auto_name;
-            traj_vel.trajectory_index = i;
+            ck_ros_base_msgs_node::TrajectoryInfo_Point traj_info_point;
+            traj_info_point.autonomous_name = auto_name;
+            traj_info_point.trajectory_index = i;
             
-            get_trajectory_velocities(traj_set.red_trajectory, traj_vel);
+            get_trajectory_velocities(traj_set.red_trajectory, traj_info_point);
 
-            traj_vels.traj_velocities.push_back(traj_vel);
+            traj_info.traj_points.push_back(traj_info_point);
 
-            // traj_vels.traj_velocities.push_back()
+            // traj_info.traj_velocities.push_back()
         }
 
         traj_map.insert({auto_name, traj_sets});
@@ -276,7 +282,7 @@ void generate_trajectories(void)
         // ROS_ERROR_STREAM("Generated trajectory in: " << elapsed.toSec() << " seconds." << std::endl);
     }
 
-    traj_velocities_publisher->publish(traj_vels);
+    traj_velocities_publisher->publish(traj_info);
 }
 
 void robot_odometry_subscriber(const nav_msgs::Odometry &odom)
@@ -541,6 +547,8 @@ int main(int argc, char **argv)
     required_params_found &= n.getParam(CKSP(max_voltage), max_voltage);
     required_params_found &= n.getParam(CKSP(trajectory_directory), trajectory_directory);
     required_params_found &= n.getParam(CKSP(robot_max_fwd_vel_mult), robot_max_fwd_vel_mult);
+    required_params_found &= n.getParam(CKSP(default_cook_mps), default_cook_mps);
+    required_params_found &= n.getParam(CKSP(default_serve_mps), default_serve_mps);
 
     robot_max_fwd_vel *= robot_max_fwd_vel_mult;
 
@@ -572,7 +580,7 @@ int main(int argc, char **argv)
     reset_pose_publisher = &reset_pose_publisher_;
     static ros::Publisher status_publisher_ = node->advertise<ck_ros_msgs_node::Trajectory_Status>("/TrajectoryStatus", 10);
     status_publisher = &status_publisher_;
-    static ros::Publisher traj_velocities_publisher_ = node->advertise<ck_ros_base_msgs_node::TrajVelocities>("/TrajVelocities", 10, true);
+    static ros::Publisher traj_velocities_publisher_ = node->advertise<ck_ros_base_msgs_node::TrajectoryInfo>("/TrajVelocities", 10, true);
     traj_velocities_publisher = &traj_velocities_publisher_;
 
     generate_trajectories();
