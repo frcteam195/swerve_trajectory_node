@@ -23,6 +23,9 @@
 #include "ck_utilities/trajectory/TimedView.hpp"
 #include "ck_utilities/geometry/geometry_ros_helpers.hpp"
 
+#include "limelight_vision_node/Limelight_Status.h"
+#include "limelight_vision_node/Limelight_Info.h"
+
 #include "ros/ros.h"
 
 #include "nav_msgs/Path.h"
@@ -42,6 +45,7 @@
 #include "trajectory_utils.hpp"
 
 #include <map>
+#include <cmath>
 #include <string>
 #include <utility>
 #include <atomic>
@@ -86,6 +90,9 @@ double persistHeadingRads = 0.0;
 std::string active_trajectory_name = "";
 
 ck_ros_msgs_node::Trajectory_Status trajectory_status;
+
+VisionOffset vision_offset{0.0, 0.0, false};
+VisionOffset off{0.0, 0.0, false};
 
 nav_msgs::Path package_trajectory(Trajectory<TimedState<Pose2dWithCurvature>, TimedState<Rotation2d>> trajectory)
 {
@@ -506,6 +513,41 @@ bool start_trajectory(swerve_trajectory_node::StartTrajectory::Request &request,
     return true;
 }
 
+void limelight_vision_subscriber(const limelight_vision_node::Limelight_Status &limelight_status)
+{
+    double dx = limelight_status.limelights[0].target_dx_deg;
+    // double dy = limelight_status.limelights[0].target_dy_deg;
+    double area = limelight_status.limelights[0].target_area;
+    bool valid = (bool)limelight_status.limelights[0].target_valid;
+
+    if (valid)
+    {
+        // meh
+        // double distance_inches = 95.0 - 24.0 * log(area);
+        double distance_inches = 98.0 - 29.1 * log(area);
+        VisionOffset robot_to_piece;
+        robot_to_piece.x = distance_inches * cos(ck::math::deg2rad(dx));
+        robot_to_piece.y = distance_inches * sin(ck::math::deg2rad(dx));
+        (void)robot_to_piece;
+        // ck::log_warn << "Distance: " << distance_inches << " inches" << std::endl;
+        // ck::log_warn << "Offset - X: " << robot_to_piece.x;
+        // ck::log_warn << ", Y: " << robot_to_piece.y << "\n\n";
+        // ck::log_warn << std::flush;
+
+        double theta = 90.0 - current_pose.getRotation().getDegrees() - dx; 
+        vision_offset.x = distance_inches * sin(ck::math::deg2rad(theta));
+        vision_offset.y = distance_inches * cos(ck::math::deg2rad(theta));
+        vision_offset.apply = true;
+    }
+    else
+    {
+        vision_offset.apply = false;
+        // ck::log_warn << "NO VALID TARGET FOUND" << std::endl;
+    }
+
+    return;
+}
+
 int main(int argc, char **argv)
 {
     /**
@@ -559,20 +601,37 @@ int main(int argc, char **argv)
     // std::cout << "pre sub" << std::endl;
 
     // ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
-    static ros::ServiceServer service_start = node->advertiseService("start_trajectory", start_trajectory);
-    static ros::ServiceServer service_get_autonomous_info = node->advertiseService("get_autonomous_info", get_autonomous_info);
-    static ros::ServiceServer service_stop = node->advertiseService("stop_trajectory", stop_trajectory);
-    static ros::ServiceServer reset_pose_confirmation = node->advertiseService("reset_pose_with_confirmation", reset_pose_confirmation_service);
-	static ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
-    static ros::Publisher swerve_auto_control_publisher_ = node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>("/SwerveAutoControl", 10);
+    static ros::ServiceServer service_start =
+        node->advertiseService("start_trajectory", start_trajectory);
+    static ros::ServiceServer service_get_autonomous_info =
+        node->advertiseService("get_autonomous_info", get_autonomous_info);
+    static ros::ServiceServer service_stop =
+        node->advertiseService("stop_trajectory", stop_trajectory);
+    static ros::ServiceServer reset_pose_confirmation = node->advertiseService(
+        "reset_pose_with_confirmation", reset_pose_confirmation_service);
+    static ros::Subscriber odometry_subscriber =
+        node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber,
+                        ros::TransportHints().tcpNoDelay());
+    static ros::Subscriber limelight_subscriber =
+        node->subscribe("/LimelightStatus", 10, limelight_vision_subscriber,
+                        ros::TransportHints().tcpNoDelay());
+    static ros::Publisher swerve_auto_control_publisher_ =
+        node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>(
+            "/SwerveAutoControl", 10);
     swerve_auto_control_publisher = &swerve_auto_control_publisher_;
-    static ros::Publisher path_publisher_ = node->advertise<nav_msgs::Path>("/CurrentPath", 10, true);
+    static ros::Publisher path_publisher_ =
+        node->advertise<nav_msgs::Path>("/CurrentPath", 10, true);
     path_publisher = &path_publisher_;
-    static ros::Publisher reset_pose_publisher_ = node->advertise<nav_msgs::Odometry>("/ResetHeading", 10);
+    static ros::Publisher reset_pose_publisher_ =
+        node->advertise<nav_msgs::Odometry>("/ResetHeading", 10);
     reset_pose_publisher = &reset_pose_publisher_;
-    static ros::Publisher status_publisher_ = node->advertise<ck_ros_msgs_node::Trajectory_Status>("/TrajectoryStatus", 10);
+    static ros::Publisher status_publisher_ =
+        node->advertise<ck_ros_msgs_node::Trajectory_Status>(
+            "/TrajectoryStatus", 10);
     status_publisher = &status_publisher_;
-    static ros::Publisher traj_velocities_publisher_ = node->advertise<ck_ros_base_msgs_node::TrajVelocities>("/TrajVelocities", 10, true);
+    static ros::Publisher traj_velocities_publisher_ =
+        node->advertise<ck_ros_base_msgs_node::TrajVelocities>(
+            "/TrajVelocities", 10, true);
     traj_velocities_publisher = &traj_velocities_publisher_;
 
     generate_trajectories();
@@ -623,7 +682,26 @@ int main(int argc, char **argv)
 
             current_timestamp = ros::Time::now().toSec();
 
-            ChassisSpeeds output = motion_planner->update(current_timestamp, current_pose);
+            double offset_x = 0.0;
+            double offset_y = 0.0;
+
+            // if (vision_offset.apply && trajectory_status.progress > 0.5)
+            // {
+            //     // offset_x = vision_offset.x;
+            //     offset_y = vision_offset.y;
+            // }
+
+            if (trajectory_status.progress > 0.50)
+            {
+                offset_y = 20.0;
+            }
+
+            Pose2d offset_pose(current_pose.getTranslation().x() + offset_x,
+                               current_pose.getTranslation().y() + offset_y,
+                               current_pose.getRotation());
+
+            // ChassisSpeeds output = motion_planner->update(current_timestamp, current_pose);
+            ChassisSpeeds output = motion_planner->update(current_timestamp, offset_pose);
 
             Pose2d robot_pose_vel(output.vxMetersPerSecond * 0.01, output.vyMetersPerSecond * 0.01, Rotation2d::fromRadians(output.omegaRadiansPerSecond * 0.01));
             Twist2d twist_vel = Pose2d::log(robot_pose_vel);

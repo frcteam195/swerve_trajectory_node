@@ -10,3 +10,9 @@ double max_voltage;
 
 std::string trajectory_directory;
 
+struct VisionOffset
+{
+    double x;
+    double y;
+    bool apply;
+};

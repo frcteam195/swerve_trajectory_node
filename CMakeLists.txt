@@ -10,7 +10,7 @@ project(${PROJECT_NAME})
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs nav_msgs geometry_msgs message_generation ck_ros_base_msgs_node ck_utilities_node frc_robot_utilities_node)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs nav_msgs geometry_msgs message_generation ck_ros_base_msgs_node ck_utilities_node frc_robot_utilities_node limelight_vision_node)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -109,7 +109,7 @@ catkin_package(
 #  LIBRARIES ck_ros_base_msgs_node
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
-  CATKIN_DEPENDS roscpp message_generation message_runtime ck_ros_base_msgs_node ck_utilities_node frc_robot_utilities_node
+  CATKIN_DEPENDS roscpp message_generation message_runtime ck_ros_base_msgs_node ck_utilities_node frc_robot_utilities_node limelight_vision_node
 )
 
 ###########
