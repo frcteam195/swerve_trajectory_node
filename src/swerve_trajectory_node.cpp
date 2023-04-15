@@ -645,7 +645,7 @@ int main(int argc, char **argv)
 
             swerve_auto_control.twist.angular.x = 0.0;
             swerve_auto_control.twist.angular.y = 0.0;
-            swerve_auto_control.twist.angular.z = updated_output.omegaRadiansPerSecond;
+            swerve_auto_control.twist.angular.z = 0.0;
 
             swerve_auto_control.pose.position.x = 0.0;
             swerve_auto_control.pose.position.y = 0.0;
