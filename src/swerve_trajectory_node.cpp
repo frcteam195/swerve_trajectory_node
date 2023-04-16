@@ -530,14 +530,6 @@ int main(int argc, char **argv)
 
     node = &n;
 
-    // std::vector<Translation2d> translations = {
-    //     Translation2d(-1, 1),
-    //     Translation2d(1, 1),
-    //     Translation2d(-1, -1),
-    //     Translation2d(1, -1)};
-
-    // ck::team254_swerve::SwerveDriveKinematics kinematics(translations);
-
     register_for_robot_updates(node);
 
     bool required_params_found = true;
@@ -560,7 +552,6 @@ int main(int argc, char **argv)
 
     robot_max_fwd_accel = ck::math::meters_to_inches(robot_max_fwd_accel);
     robot_max_fwd_decel = ck::math::meters_to_inches(robot_max_fwd_decel);
-    // std::cout << "pre sub" << std::endl;
 
     // ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
     static ros::ServiceServer service_start = node->advertiseService("start_trajectory", start_trajectory);
@@ -580,12 +571,6 @@ int main(int argc, char **argv)
     traj_velocities_publisher = &traj_velocities_publisher_;
 
     generate_trajectories();
-
-    // debug_trajectory(traj_map.at("correct_start").first);
-    // debug_trajectory_iterator(traj_map.at("correct_start").first, 0.01);
-
-    // Send traj updates on /SwerveAutoControl
-    // send Swerve_Drivetrain_Auto_Control
 
     ros::Rate rate(100);
     while (ros::ok())
