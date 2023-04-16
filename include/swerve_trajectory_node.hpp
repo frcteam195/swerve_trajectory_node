@@ -4,8 +4,7 @@
 
 double robot_max_fwd_accel;
 double robot_max_fwd_decel;
-double robot_max_fwd_vel;
-double robot_max_fwd_vel_mult;
+double auto_trajectory_max_vel_mps;
 double default_cook_mps;
 double default_serve_mps;
 double max_voltage;

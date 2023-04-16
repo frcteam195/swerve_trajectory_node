@@ -203,11 +203,11 @@ void generate_trajectories(void)
 
         for (size_t i = 0; i < pathSet.size(); i++)
         {
-            double max_speed = robot_max_fwd_vel;
+            double max_speed = ck::math::meters_to_inches(auto_trajectory_max_vel_mps);
 
             // double path_desired_speed = red_paths.at(i).max_velocity_in_per_sec;
             double path_desired_speed = pathSet[i].max_velocity_in_per_sec;
-            if (path_desired_speed > 0 && path_desired_speed < robot_max_fwd_vel)
+            if (path_desired_speed > 0 && path_desired_speed < max_speed)
             {
                 max_speed = pathSet[i].max_velocity_in_per_sec;
             }
@@ -543,14 +543,11 @@ int main(int argc, char **argv)
     bool required_params_found = true;
     required_params_found &= n.getParam(CKSP(robot_max_fwd_accel), robot_max_fwd_accel);
     required_params_found &= n.getParam(CKSP(robot_max_fwd_decel), robot_max_fwd_decel);
-    required_params_found &= n.getParam(CKSP(robot_max_fwd_vel), robot_max_fwd_vel);
+    required_params_found &= n.getParam(CKSP(auto_trajectory_max_vel_mps), auto_trajectory_max_vel_mps);
     required_params_found &= n.getParam(CKSP(max_voltage), max_voltage);
     required_params_found &= n.getParam(CKSP(trajectory_directory), trajectory_directory);
-    required_params_found &= n.getParam(CKSP(robot_max_fwd_vel_mult), robot_max_fwd_vel_mult);
     required_params_found &= n.getParam(CKSP(default_cook_mps), default_cook_mps);
     required_params_found &= n.getParam(CKSP(default_serve_mps), default_serve_mps);
-
-    robot_max_fwd_vel *= robot_max_fwd_vel_mult;
 
     if (!required_params_found)
     {
@@ -559,11 +556,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    motion_planner = new DriveMotionPlanner(robot_max_fwd_vel);
+    motion_planner = new DriveMotionPlanner(auto_trajectory_max_vel_mps);
 
     robot_max_fwd_accel = ck::math::meters_to_inches(robot_max_fwd_accel);
     robot_max_fwd_decel = ck::math::meters_to_inches(robot_max_fwd_decel);
-    robot_max_fwd_vel = ck::math::meters_to_inches(robot_max_fwd_vel);
     // std::cout << "pre sub" << std::endl;
 
     // ros::ServiceServer service_generate = node->advertiseService("get_trajectory", get_trajectory);
@@ -571,7 +567,7 @@ int main(int argc, char **argv)
     static ros::ServiceServer service_get_autonomous_info = node->advertiseService("get_autonomous_info", get_autonomous_info);
     static ros::ServiceServer service_stop = node->advertiseService("stop_trajectory", stop_trajectory);
     static ros::ServiceServer reset_pose_confirmation = node->advertiseService("reset_pose_with_confirmation", reset_pose_confirmation_service);
-	static ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
+    static ros::Subscriber odometry_subscriber = node->subscribe("/odometry/filtered", 10, robot_odometry_subscriber, ros::TransportHints().tcpNoDelay());
     static ros::Publisher swerve_auto_control_publisher_ = node->advertise<ck_ros_msgs_node::Swerve_Drivetrain_Auto_Control>("/SwerveAutoControl", 10);
     swerve_auto_control_publisher = &swerve_auto_control_publisher_;
     static ros::Publisher path_publisher_ = node->advertise<nav_msgs::Path>("/CurrentPath", 10, true);
